@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - KerjaLu</title>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Leaflet Map CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+
+  <div class="dashboard-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-header-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <a href="/" class="logo" style="display: inline-flex;">KerjaLu <span>GIGS</span></a>
+          <button id="sidebar-toggle" class="burger-btn" aria-label="Toggle Menu">
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+            <span class="burger-line"></span>
+          </button>
+        </div>
+        
+        <!-- Collapsible Content Wrapper -->
+        <div class="sidebar-collapse-content" id="sidebar-content">
+          <!-- User Card & Logout -->
+          <div class="sidebar-user" style="border-top: none; border-bottom: 1px solid var(--border-color); padding-top: 0; padding-bottom: 20px; margin-bottom: 20px; margin-top: 20px;">
+            <div class="user-info-sidebar" style="margin-bottom: 12px;">
+              <span class="username" id="sidebar-username">Loading...</span>
+              <span class="badge role-badge" id="sidebar-role">Loading...</span>
+            </div>
+            <button id="logout-sidebar-btn" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center; gap: 8px;">
+            Logout
+          </button>
+          </div>
+
+          <!-- Sidebar Navigation Options (Dynamic based on Role) -->
+          <ul class="sidebar-menu" id="sidebar-nav">
+            <!-- Populated by JavaScript -->
+          </ul>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Content Area -->
+    <main class="main-content">
+      
+      <!-- Welcome Banner -->
+      <div class="welcome-banner">
+        <h1 id="welcome-title">Welcome Back!</h1>
+        <p id="welcome-subtitle">Here is what is happening with your KerjaLu account today.</p>
+      </div>
+
+      <!-- Alert Panel for Feedbacks -->
+      <div id="dashboard-alert" class="alert-box"></div>
+
+      <!-- ============================================== -->
+      <!-- VIEW: JOBSEEKER DASHBOARD                      -->
+      <!-- ============================================== -->
+      <section id="view-jobseeker-dashboard" class="dashboard-view" style="display: none;">
+        <div class="stats-grid">
+          <div class="glass-panel stat-card">
+            <span class="label">Total Earnings</span>
+            <span class="value" id="seeker-stat-earnings">$0.00</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">My Applications</span>
+            <span class="value" id="seeker-stat-apps">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Orders Sold</span>
+            <span class="value" id="seeker-stat-orders-sold">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Gigs Purchased</span>
+            <span class="value" id="seeker-stat-orders-bought">0</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 30px;">
+          <!-- Seeker's Gig Services -->
+          <div class="glass-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h2>My Offered Services (Gigs)</h2>
+              <button class="btn btn-primary btn-small" onclick="switchTab('jobseeker-post-gig')">+ Post a Gig</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Service Title</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Delivery Days</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody id="seeker-gigs-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2-column Grid: Jobs Applied & Gigs Ordered -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px;" class="dashboard-tables-grid">
+          <!-- Jobs Applied -->
+          <div class="glass-panel" style="display: flex; flex-direction: column;">
+            <h2 style="margin-bottom: 20px;">My Applied Jobs</h2>
+            <div class="table-wrapper" style="overflow-y: auto; max-height: 280px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Employer</th>
+                    <th>Bid</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="seeker-applied-jobs-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Gigs Ordered -->
+          <div class="glass-panel" style="display: flex; flex-direction: column;">
+            <h2 style="margin-bottom: 20px;">My Ordered Gigs (Purchases)</h2>
+            <div class="table-wrapper" style="overflow-y: auto; max-height: 280px;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Gig Title</th>
+                    <th>Seller</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="seeker-ordered-gigs-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: EMPLOYER DASHBOARD                       -->
+      <!-- ============================================== -->
+      <section id="view-employer-dashboard" class="dashboard-view" style="display: none;">
+        <div class="stats-grid">
+          <div class="glass-panel stat-card">
+            <span class="label">Total Spending</span>
+            <span class="value" id="employer-stat-spend">$0.00</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Jobs Posted</span>
+            <span class="value" id="employer-stat-jobs">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Gigs Bought</span>
+            <span class="value" id="employer-stat-gigs">0</span>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="margin-top: 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>My Posted Job Listings</h2>
+            <button class="btn btn-primary btn-small" onclick="switchTab('employer-post-job')">+ Post a Job</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Category</th>
+                  <th>Budget</th>
+                  <th>Applicants</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="employer-jobs-table">
+                <!-- JS generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gigs Ordered (Services Bought) -->
+        <div class="glass-panel" style="margin-top: 30px;">
+          <h2 style="margin-bottom: 20px;">Freelance Services Ordered (Gigs Bought)</h2>
+          <div class="table-wrapper" style="overflow-y: auto; max-height: 280px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Gig Title</th>
+                  <th>Freelancer</th>
+                  <th>Price</th>
+                  <th>Date Ordered</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="employer-ordered-gigs-table">
+                <!-- JS generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: ADMIN DASHBOARD                          -->
+      <!-- ============================================== -->
+      <section id="view-admin-dashboard" class="dashboard-view" style="display: none;">
+        <div class="stats-grid">
+          <div class="glass-panel stat-card">
+            <span class="label">Total Users</span>
+            <span class="value" id="admin-stat-users">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Total Jobs</span>
+            <span class="value" id="admin-stat-jobs">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Total Gigs</span>
+            <span class="value" id="admin-stat-gigs">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Orders Placed</span>
+            <span class="value" id="admin-stat-orders">0</span>
+          </div>
+          <div class="glass-panel stat-card">
+            <span class="label">Completed Vol.</span>
+            <span class="value" id="admin-stat-volume">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Admin Control Panels -->
+        <div style="display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 30px;">
+          <!-- User Management -->
+          <div class="glass-panel">
+            <h2 style="margin-bottom: 20px;">User Management</h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: UNIFIED MARKETPLACE EXPLORER             -->
+      <!-- ============================================== -->
+      <section id="view-marketplace-explorer" class="dashboard-view" style="display: none;">
+        <!-- Filter and Search Header Panel -->
+        <div class="glass-panel" style="margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px;">
+          <!-- Display Toggle Pill Buttons -->
+          <div style="display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 5px;">
+            <button id="toggle-search-jobs" class="btn btn-primary" onclick="setMarketplaceType('jobs')">
+              Browse Jobs (Projects)
+            </button>
+            <button id="toggle-search-gigs" class="btn btn-secondary" onclick="setMarketplaceType('gigs')">
+              Browse Gigs (Freelance Services)
+            </button>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+            <!-- Keyword search -->
+            <div class="form-group" style="margin: 0; flex: 1; min-width: 200px;">
+              <label for="market-search-input" style="margin-bottom: 4px; font-size: 0.85rem;">Keywords</label>
+              <input type="text" id="market-search-input" class="form-control" placeholder="Search title, description...">
+            </div>
+
+            <!-- Category -->
+            <div class="form-group" style="margin: 0; min-width: 160px;">
+              <label for="market-category-filter" style="margin-bottom: 4px; font-size: 0.85rem;">Category</label>
+              <select id="market-category-filter" class="form-control">
+                <option value="">All Categories</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Design">Design</option>
+                <option value="Writing">Writing</option>
+                <option value="Marketing">Marketing</option>
+              </select>
+            </div>
+
+            <!-- Radius -->
+            <div class="form-group" style="margin: 0; min-width: 130px;">
+              <label for="market-radius-select" style="margin-bottom: 4px; font-size: 0.85rem;">Radius Range</label>
+              <select id="market-radius-select" class="form-control">
+                <option value="5">5 km</option>
+                <option value="10" selected>10 km</option>
+                <option value="25">25 km</option>
+                <option value="50">50 km</option>
+                <option value="anywhere">Anywhere</option>
+              </select>
+            </div>
+
+            <!-- Filter trigger button -->
+            <button class="btn btn-primary" onclick="loadMarketplaceData()" style="padding: 10px 20px;">
+              Filter Search
+            </button>
+
+            <!-- Locate Button & Coordinates display -->
+            <div style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
+              <div style="text-align: right;">
+                <span id="market-location-status" style="font-size: 0.85rem; font-weight: 600; display: block; color: var(--text-muted);">
+                  Location: Pin Selected
+                </span>
+                <span id="market-coords-display" style="font-size: 0.75rem; color: var(--text-muted); display: block;">
+                  Lat: 5.9804, Lng: 116.0735
+                </span>
+              </div>
+              <button type="button" class="btn btn-secondary btn-small" id="market-locate-btn" style="padding: 8px 12px;">
+                Locate Me
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Split Layout Panel -->
+        <div style="display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; height: 600px; margin-bottom: 30px;" class="marketplace-split-container">
+          <!-- Left Column: Leaflet Map -->
+          <div class="glass-panel" style="padding: 0; overflow: hidden; position: relative;">
+            <div id="marketplace-map" style="width: 100%; height: 100%; z-index: 1;"></div>
+          </div>
+
+          <!-- Right Column: Scrollable List of Results -->
+          <div class="glass-panel" style="display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+            <h3 style="margin-bottom: 15px;" id="market-list-title">Search Results</h3>
+            <div style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px;" id="marketplace-list-results">
+              <!-- Dynamically populated list -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: MY APPLICATIONS (Jobseeker applications) -->
+      <!-- ============================================== -->
+      <section id="view-my-applications" class="dashboard-view" style="display: none;">
+        <div class="glass-panel">
+          <h2>My Submitted Job Applications</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Employer</th>
+                  <th>Budget</th>
+                  <th>My Bid</th>
+                  <th>Application Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="my-applications-table">
+                <!-- JS generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: PURCHASES (Bought Gigs list)             -->
+      <!-- ============================================== -->
+      <section id="view-purchases" class="dashboard-view" style="display: none;">
+        <div class="glass-panel">
+          <h2>Gigs Bought / Purchase Orders</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Freelance Service</th>
+                  <th>Seller / Freelancer</th>
+                  <th>Price</th>
+                  <th>Order Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="purchases-table">
+                <!-- JS generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: SALES ORDERS (Freelancer received orders)-->
+      <!-- ============================================== -->
+      <section id="view-sales-orders" class="dashboard-view" style="display: none;">
+        <div class="glass-panel">
+          <h2>Freelance Orders Received (Sales)</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Freelance Service</th>
+                  <th>Buyer</th>
+                  <th>Amount</th>
+                  <th>Order Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sales-orders-table">
+                <!-- JS generated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: POST JOB FORM (Employer only)            -->
+      <!-- ============================================== -->
+      <section id="view-employer-post-job" class="dashboard-view" style="display: none;">
+        <div class="glass-panel" style="max-width: 600px;">
+          <h2>Create a New Job Listing</h2>
+          <p style="margin-bottom: 24px;">Post a requirement for freelancers to submit proposals and bid.</p>
+          <form id="post-job-form">
+            <div class="form-group">
+              <label for="job-title">Job Title</label>
+              <input type="text" id="job-title" class="form-control" placeholder="e.g. Build an Express backend" required>
+            </div>
+            <div class="form-group">
+              <label for="job-category">Category</label>
+              <select id="job-category" class="form-control" required>
+                <option value="Web Development">Web Development</option>
+                <option value="Design">Design</option>
+                <option value="Writing">Writing</option>
+                <option value="Marketing">Marketing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="job-budget">Budget ($ USD)</label>
+              <input type="number" id="job-budget" class="form-control" min="5" placeholder="e.g. 200" required>
+            </div>
+            <div class="form-group">
+              <label for="job-desc">Job Description</label>
+              <textarea id="job-desc" class="form-control" placeholder="Write detailed requirements..." required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Job Location Coordinates (Optional)</label>
+              <div style="display: flex; gap: 10px;">
+                <input type="number" step="any" id="job-lat" class="form-control" placeholder="Latitude (e.g. 6.0336)">
+                <input type="number" step="any" id="job-lng" class="form-control" placeholder="Longitude (e.g. 116.1214)">
+              </div>
+              <button type="button" class="btn btn-secondary btn-small" id="btn-fill-job-coords" style="margin-top: 8px; padding: 6px 12px; font-size: 0.85rem;">
+                Use My Profile Location
+              </button>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 15px;">
+              <button type="submit" class="btn btn-primary">Publish Job Posting</button>
+              <button type="button" class="btn btn-secondary" onclick="switchTab('dashboard')">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: POST GIG FORM (Jobseeker only)           -->
+      <!-- ============================================== -->
+      <section id="view-jobseeker-post-gig" class="dashboard-view" style="display: none;">
+        <div class="glass-panel" style="max-width: 600px;">
+          <h2>Offer a Freelance Service</h2>
+          <p style="margin-bottom: 24px;">Advertise your expertise so employers can buy your services directly.</p>
+          <form id="post-gig-form">
+            <div class="form-group">
+              <label for="gig-title">Service Title</label>
+              <input type="text" id="gig-title" class="form-control" placeholder="e.g. I will design a vector logo" required>
+            </div>
+            <div class="form-group">
+              <label for="gig-category">Category</label>
+              <select id="gig-category" class="form-control" required>
+                <option value="Web Development">Web Development</option>
+                <option value="Design">Design</option>
+                <option value="Writing">Writing</option>
+                <option value="Marketing">Marketing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="gig-price">Price ($ USD)</label>
+              <input type="number" id="gig-price" class="form-control" min="5" placeholder="e.g. 50" required>
+            </div>
+            <div class="form-group">
+              <label for="gig-delivery">Delivery Days</label>
+              <input type="number" id="gig-delivery" class="form-control" min="1" placeholder="e.g. 3" required>
+            </div>
+            <div class="form-group">
+              <label for="gig-desc">Service Description</label>
+              <textarea id="gig-desc" class="form-control" placeholder="Write exactly what you will deliver..." required></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 10px;">
+              <button type="submit" class="btn btn-primary">Publish Service Gig</button>
+              <button type="button" class="btn btn-secondary" onclick="switchTab('dashboard')">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: ADMIN MODERATION VIEW                    -->
+      <!-- ============================================== -->
+      <section id="view-admin-moderation" class="dashboard-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 30px;">
+          <!-- Moderate Job Listings -->
+          <div class="glass-panel">
+            <h2>Moderate Active Job Listings</h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Employer</th>
+                    <th>Budget</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-jobs-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Moderate Freelance Gigs -->
+          <div class="glass-panel">
+            <h2>Moderate Freelance Services (Gigs)</h2>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Gig Title</th>
+                    <th>Freelancer</th>
+                    <th>Price</th>
+                    <th>Category</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-gigs-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: MY PROFILE VIEW                          -->
+      <!-- ============================================== -->
+      <section id="view-profile" class="dashboard-view" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px;" class="profile-layout-container">
+          
+          <!-- Left Column: User Card & Form -->
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Profile Info Card -->
+            <div class="glass-panel text-center" style="padding: 30px; text-align: center;">
+              <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--gradient-main); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 15px auto; font-weight: 700; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);">
+                <span id="profile-avatar-char">U</span>
+              </div>
+              <h2 id="profile-display-username" style="margin-bottom: 5px;">Username</h2>
+              <span id="profile-display-role" class="badge badge-in-progress" style="font-size: 0.85rem; padding: 6px 12px; display: inline-block;">Jobseeker</span>
+            </div>
+
+            <!-- Profile Details Update Form -->
+            <div class="glass-panel">
+              <h3 style="margin-bottom: 20px; font-weight: 600;">Update Profile Credentials</h3>
+              <form id="profile-update-form">
+                <div class="form-group">
+                  <label for="profile-username">Username</label>
+                  <input type="text" id="profile-username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="profile-email">Email Address</label>
+                  <input type="email" id="profile-email" class="form-control" required>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); margin: 25px 0 20px 0; padding-top: 20px;">
+                  <h4 style="margin-bottom: 15px; color: var(--text-main); font-weight: 600;">Change Password (Optional)</h4>
+                  <div class="form-group">
+                    <label for="profile-current-password">Current Password</label>
+                    <input type="password" id="profile-current-password" class="form-control" placeholder="Enter current password to verify">
+                  </div>
+                  <div class="form-group">
+                    <label for="profile-new-password">New Password</label>
+                    <input type="password" id="profile-new-password" class="form-control" placeholder="Enter new password">
+                  </div>
+                  <div class="form-group">
+                    <label for="profile-confirm-password">Confirm New Password</label>
+                    <input type="password" id="profile-confirm-password" class="form-control" placeholder="Retype new password">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save Profile Changes</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Right Column: Location Settings & Map Picker -->
+          <div class="glass-panel" style="display: flex; flex-direction: column;" id="profile-location-panel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <h3 style="margin: 0; font-weight: 600;">Location Settings</h3>
+                <p style="margin: 3px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Set your default base coordinate for proximity search</p>
+              </div>
+              <button class="btn btn-secondary btn-small" id="profile-locate-btn" type="button" style="padding: 8px 12px;">Locate Me</button>
+            </div>
+
+            <!-- Coordinates Info Box -->
+            <div style="background: rgba(15, 23, 42, 0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Current Settings</span>
+                <span id="profile-coords-display" style="font-family: monospace; font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Lat: --, Lng: --</span>
+              </div>
+              <span id="profile-sync-status" class="badge badge-completed" style="font-size: 0.75rem;">Synced</span>
+            </div>
+
+            <!-- Profile Map Container -->
+            <div style="flex: 1; height: 350px; border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow: hidden; position: relative;">
+              <div id="profile-map" style="width: 100%; height: 100%; z-index: 1;"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================== -->
+        <!-- USER PORTFOLIO OF COMPLETED WORK               -->
+        <!-- ============================================== -->
+        <div id="profile-portfolio-header" style="margin-top: 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+          <div>
+            <h2 style="margin: 0; font-weight: 700; background: var(--gradient-main); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Professional Work Portfolio</h2>
+            <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-muted);">A summary of your completed contracts and freelance services on KerjaLu</p>
+          </div>
+          <button class="btn btn-primary" onclick="downloadPortfolioResume()" style="padding: 10px 20px; font-size: 0.9rem;">
+            Download Resume (PDF)
+          </button>
+        </div>
+
+        <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;" class="portfolio-container" id="profile-portfolio-section">
+          <!-- Portfolio of Completed Jobs -->
+          <div class="glass-panel" id="profile-jobs-completed-card">
+            <h3 id="profile-jobs-title" style="margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+              Secured & Completed Jobs
+            </h3>
+            <div class="table-wrapper">
+              <table style="width: 100%;">
+                <thead>
+                  <tr id="profile-jobs-headers">
+                    <!-- JS generated headers -->
+                  </tr>
+                </thead>
+                <tbody id="profile-jobs-completed-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+            <div id="profile-jobs-completed-empty" class="text-center" style="display: none; padding: 20px; color: var(--text-muted); text-align: center;">
+              No completed jobs in your portfolio yet.
+            </div>
+          </div>
+
+          <!-- Portfolio of Completed Freelance Work -->
+          <div class="glass-panel" id="profile-freelance-completed-card">
+            <h3 id="profile-freelance-title" style="margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+              Freelance Work Completed (Gigs)
+            </h3>
+            <div class="table-wrapper">
+              <table style="width: 100%;">
+                <thead>
+                  <tr id="profile-freelance-headers">
+                    <!-- JS generated headers -->
+                  </tr>
+                </thead>
+                <tbody id="profile-freelance-completed-table">
+                  <!-- JS generated -->
+                </tbody>
+              </table>
+            </div>
+            <div id="profile-freelance-completed-empty" class="text-center" style="display: none; padding: 20px; color: var(--text-muted); text-align: center;">
+              No completed freelance gigs in your portfolio yet.
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+    </main>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: APPLY FOR A JOB                         -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="apply-job-modal">
+    <div class="glass-panel modal-container">
+      <div class="modal-header">
+        <h3 id="modal-job-title">Apply for Job</h3>
+        <button class="modal-close" onclick="closeModal('apply-job-modal')">&times;</button>
+      </div>
+      <form id="apply-job-form">
+        <input type="hidden" id="modal-job-id">
+        <div class="form-group">
+          <label>Original Job Budget</label>
+          <p id="modal-job-budget" style="font-weight: 700; color: var(--color-primary); font-size: 1.1rem;">$0.00</p>
+        </div>
+        <div class="form-group">
+          <label for="apply-bid">My Bid Amount ($ USD)</label>
+          <input type="number" id="apply-bid" class="form-control" placeholder="e.g. 150" required>
+        </div>
+        <div class="form-group">
+          <label for="apply-proposal">My Proposal Pitch</label>
+          <textarea id="apply-proposal" class="form-control" placeholder="Explain your experience and why you are the best fit..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Submit Proposal</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: VIEW JOB APPLICATIONS (Employer view)  -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="view-applicants-modal">
+    <div class="glass-panel modal-container" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 id="modal-applicants-job-title">Job Applicants</h3>
+        <button class="modal-close" onclick="closeModal('view-applicants-modal')">&times;</button>
+      </div>
+      <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Proposal Details</th>
+              <th>Bid</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="modal-applicants-list">
+            <!-- JS generated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include App Script -->
+  <script src="/app.js"></script>
+</body>
+</html>

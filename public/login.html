@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - KerjaLu</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <header>
+    <div class="container nav-container">
+      <a href="/" class="logo">KerjaLu <span>GIGS</span></a>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/register" class="btn btn-primary btn-small">Get Started</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="auth-wrapper">
+    <div class="glass-panel auth-card">
+      <div class="auth-header">
+        <h2>Welcome Back</h2>
+        <p>Log in to access your KerjaLu dashboard</p>
+      </div>
+
+      <div id="alert-box" class="alert-box"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="name@domain.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Sign In</button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Don't have an account? <a href="/register">Create one here</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const alertBox = document.getElementById('alert-box');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.className = 'alert-box';
+      alertBox.style.display = 'none';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alertBox.textContent = 'Login successful! Redirecting...';
+          alertBox.className = 'alert-box alert-box-success';
+          alertBox.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+        } else {
+          alertBox.textContent = data.message || 'Login failed. Please check credentials.';
+          alertBox.className = 'alert-box alert-box-error';
+          alertBox.style.display = 'block';
+        }
+      } catch (err) {
+        console.error(err);
+        alertBox.textContent = 'An error occurred. Please try again.';
+        alertBox.className = 'alert-box alert-box-error';
+        alertBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

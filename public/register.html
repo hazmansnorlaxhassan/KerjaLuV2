@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account - KerjaLu</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+  <header>
+    <div class="container nav-container">
+      <a href="/" class="logo">KerjaLu <span>GIGS</span></a>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/login" class="btn btn-secondary btn-small">Sign In</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="auth-wrapper">
+    <div class="glass-panel auth-card">
+      <div class="auth-header">
+        <h2>Join KerjaLu Today</h2>
+        <p>Register as a Jobseeker or Employer to begin</p>
+      </div>
+
+      <div id="alert-box" class="alert-box"></div>
+
+      <form id="register-form">
+        <!-- Hidden Role Input -->
+        <input type="hidden" id="role" value="jobseeker">
+
+        <!-- Role Select Options -->
+        <div class="role-selector">
+          <div class="role-option active" id="option-jobseeker">
+            <span style="font-size: 1.5rem; display: block; margin-bottom: 8px;">💼</span>
+            <strong>Jobseeker</strong>
+            <p style="font-size: 0.75rem; margin-top: 4px;">Find part-time work & sell services</p>
+          </div>
+          <div class="role-option" id="option-employer">
+            <span style="font-size: 1.5rem; display: block; margin-bottom: 8px;">🏢</span>
+            <strong>Employer</strong>
+            <p style="font-size: 0.75rem; margin-top: 4px;">Post jobs & buy freelance gigs</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" class="form-control" placeholder="e.g. janesmith" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="e.g. jane@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Create Account</button>
+      </form>
+
+      <div class="auth-footer">
+        <p>Already have an account? <a href="/login">Sign in here</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const roleInput = document.getElementById('role');
+    const jobseekerOpt = document.getElementById('option-jobseeker');
+    const employerOpt = document.getElementById('option-employer');
+    const form = document.getElementById('register-form');
+    const alertBox = document.getElementById('alert-box');
+
+    // Role switcher logic
+    jobseekerOpt.addEventListener('click', () => {
+      roleInput.value = 'jobseeker';
+      jobseekerOpt.classList.add('active');
+      employerOpt.classList.remove('active');
+    });
+
+    employerOpt.addEventListener('click', () => {
+      roleInput.value = 'employer';
+      employerOpt.classList.add('active');
+      jobseekerOpt.classList.remove('active');
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertBox.className = 'alert-box';
+      alertBox.style.display = 'none';
+
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const role = roleInput.value;
+
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, email, password, role })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alertBox.textContent = 'Account created successfully! Logging in...';
+          alertBox.className = 'alert-box alert-box-success';
+          alertBox.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+        } else {
+          alertBox.textContent = data.message || 'Registration failed. Please check your inputs.';
+          alertBox.className = 'alert-box alert-box-error';
+          alertBox.style.display = 'block';
+        }
+      } catch (err) {
+        console.error(err);
+        alertBox.textContent = 'An error occurred. Please try again.';
+        alertBox.className = 'alert-box alert-box-error';
+        alertBox.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

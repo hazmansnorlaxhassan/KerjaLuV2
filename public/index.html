@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KerjaLu - Part-Time Gig & Freelance Platform</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  
+  <header>
+    <div class="container nav-container">
+      <a href="/" class="logo">KerjaLu <span>GIGS</span></a>
+      <nav>
+        <ul id="nav-links">
+          <!-- Dynamically populated via javascript -->
+          <li><a href="/login" class="btn btn-secondary btn-small">Sign In</a></li>
+          <li><a href="/register" class="btn btn-primary btn-small">Get Started</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Find the Perfect Part-Time Gig <br>or Hire Top Freelance Talent</h1>
+      <p>KerjaLu connects skilled jobseekers with employers offering flexible, part-time opportunities and specialized freelance services.</p>
+      <div class="hero-actions" id="hero-cta-buttons">
+        <a href="/register" class="btn btn-primary">Join as Jobseeker</a>
+        <a href="/register" class="btn btn-secondary">Hire Freelancers</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="container" style="margin-top: 40px; margin-bottom: 80px;">
+    <h2 style="text-align: center; font-size: 2.2rem; margin-bottom: 40px; font-family: var(--font-title);">
+      How KerjaLu Works
+    </h2>
+    <div class="features-grid">
+      <div class="glass-panel feature-card">
+        <div class="icon">💼</div>
+        <h3>Post & Apply for Gigs</h3>
+        <p>Employers post detailed job requests with set budgets. Jobseekers submit custom proposals with their bid amounts to win the project.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="icon">🚀</div>
+        <h3>Offer Freelance Services</h3>
+        <p>Jobseekers create and advertise their specific services (Gigs) with custom delivery timelines, allowing employers to purchase them instantly.</p>
+      </div>
+
+      <div class="glass-panel feature-card">
+        <div class="icon">🛡️</div>
+        <h3>Safe & Managed Ecosystem</h3>
+        <p>Our admin panel monitors activities, suspensions, and content moderation to ensure a highly professional and secure environment.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer style="border-top: 1px solid var(--border-color); padding: 40px 0; text-align: center; background: var(--bg-secondary);">
+    <div class="container">
+      <p style="font-size: 0.9rem;">&copy; 2026 KerjaLu Platform. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Simple verification check to switch CTA/Nav buttons if user is already logged in
+    async function checkSession() {
+      try {
+        const response = await fetch('/api/auth/profile');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            // Logged in
+            document.getElementById('nav-links').innerHTML = `
+              <li><a href="/dashboard" class="btn btn-primary btn-small">Dashboard</a></li>
+              <li><a href="#" id="logout-btn" class="btn btn-secondary btn-small">Logout</a></li>
+            `;
+            document.getElementById('hero-cta-buttons').innerHTML = `
+              <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+            `;
+
+            document.getElementById('logout-btn').addEventListener('click', async (e) => {
+              e.preventDefault();
+              const logoutRes = await fetch('/api/auth/logout', { method: 'POST' });
+              if (logoutRes.ok) {
+                window.location.reload();
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.log("No active session.", err);
+      }
+    }
+    checkSession();
+  </script>
+</body>
+</html>
