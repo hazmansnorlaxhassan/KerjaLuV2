@@ -437,12 +437,14 @@
       </section>
 
       <!-- ============================================== -->
+      <!-- ============================================== -->
       <!-- VIEW: POST JOB FORM (Employer only)            -->
       <!-- ============================================== -->
       <section id="view-employer-post-job" class="dashboard-view" style="display: none;">
-        <div class="glass-panel" style="max-width: 600px;">
-          <h2>Create a New Job Listing</h2>
-          <p style="margin-bottom: 24px;">Post a requirement for freelancers to submit proposals and bid.</p>
+        <!-- Top Section: Form -->
+        <div class="glass-panel" style="margin-bottom: 25px;">
+          <h2 id="post-job-form-title">Create a New Job Listing</h2>
+          <p id="post-job-form-subtitle" style="margin-bottom: 24px;">Post a requirement for freelancers to submit proposals and bid.</p>
           <form id="post-job-form">
             <div class="form-group">
               <label for="job-title">Job Title</label>
@@ -463,7 +465,7 @@
             </div>
             <div class="form-group">
               <label for="job-desc">Job Description</label>
-              <textarea id="job-desc" class="form-control" placeholder="Write detailed requirements..." required></textarea>
+              <textarea id="job-desc" class="form-control" placeholder="Write detailed requirements..." required style="min-height: 120px;"></textarea>
             </div>
             <div class="form-group">
               <label>Job Location Coordinates (Optional)</label>
@@ -475,11 +477,33 @@
                 Use My Profile Location
               </button>
             </div>
-            <div style="display: flex; gap: 12px; margin-top: 15px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px;">
               <button type="submit" class="btn btn-primary">Publish Job Posting</button>
               <button type="button" class="btn btn-secondary" onclick="switchTab('dashboard')">Cancel</button>
             </div>
           </form>
+        </div>
+
+        <!-- Bottom Section: Current Posted Jobs list -->
+        <div class="glass-panel" style="overflow-x: auto;">
+          <h2>My Posted Job Listings</h2>
+          <p style="margin-bottom: 24px;">Manage and edit your current posted job requirements.</p>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Category</th>
+                  <th>Budget</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="post-job-manage-list">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -622,33 +646,7 @@
               </form>
             </div>
           </div>
-
-          <!-- Right Column: Location Settings & Map Picker -->
-          <div class="glass-panel" style="display: flex; flex-direction: column;" id="profile-location-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-              <div>
-                <h3 style="margin: 0; font-weight: 600;">Location Settings</h3>
-                <p style="margin: 3px 0 0 0; font-size: 0.8rem; color: var(--text-muted);">Set your default base coordinate for proximity search</p>
-              </div>
-              <button class="btn btn-secondary btn-small" id="profile-locate-btn" type="button" style="padding: 8px 12px;">Locate Me</button>
-            </div>
-
-            <!-- Coordinates Info Box -->
-            <div style="background: rgba(15, 23, 42, 0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Current Settings</span>
-                <span id="profile-coords-display" style="font-family: monospace; font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Lat: --, Lng: --</span>
-              </div>
-              <span id="profile-sync-status" class="badge badge-completed" style="font-size: 0.75rem;">Synced</span>
-            </div>
-
-            <!-- Profile Map Container -->
-            <div style="flex: 1; height: 350px; border-radius: var(--radius-md); border: 1px solid var(--border-color); overflow: hidden; position: relative;">
-              <div id="profile-map" style="width: 100%; height: 100%; z-index: 1;"></div>
-            </div>
           </div>
-
-        </div>
 
         <!-- ============================================== -->
         <!-- USER PORTFOLIO OF COMPLETED WORK               -->

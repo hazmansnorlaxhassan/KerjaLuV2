@@ -1,6 +1,6 @@
 -- Create Database if not exists
---CREATE DATABASE IF NOT EXISTS kerjalu_db;
---USE kerjalu_db;
+CREATE DATABASE IF NOT EXISTS kerjalu_db;
+USE kerjalu_db;
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (

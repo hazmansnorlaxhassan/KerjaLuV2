@@ -75,6 +75,10 @@ function renderSidebarMenu() {
 async function switchTab(tabName) {
   currentTab = tabName;
 
+  if (typeof resetPostJobForm === 'function') {
+    resetPostJobForm();
+  }
+
   // Close mobile sidebar menu if open
   const sidebar = document.querySelector('.sidebar');
   if (sidebar) {
@@ -138,6 +142,7 @@ async function switchTab(tabName) {
     welcomeTitle.textContent = `Post a Job Listing`;
     welcomeSubtitle.textContent = `Create a requirement to find the ideal freelancer.`;
     document.getElementById('view-employer-post-job').style.display = 'block';
+    await loadEmployerManageJobs();
   } else if (tabName === 'jobseeker-post-gig') {
     welcomeTitle.textContent = `Create Freelance Gig`;
     welcomeSubtitle.textContent = `Offer your services to employers searching for help.`;
@@ -193,8 +198,8 @@ async function loadJobseekerDashboard() {
       tableBody.innerHTML = gigs.map(gig => `
         <tr>
           <td style="font-weight: 600;">${gig.title}</td>
-          <td><span class="badge badge-in-progress">${gig.category}</span></td>
-          <td style="font-weight: 700; color: var(--color-primary);">$${parseFloat(gig.price).toFixed(2)}</td>
+          <td>${getCategoryBadgeHtml(gig.category)}</td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(gig.price).toFixed(2)}</td>
           <td>${gig.delivery_days} Days</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(gig.created_at).toLocaleDateString()}</td>
         </tr>
@@ -210,7 +215,7 @@ async function loadJobseekerDashboard() {
         <tr>
           <td style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(app.job_title)}</td>
           <td style="font-size: 0.85rem;">${escapeHtml(app.employer_name)}</td>
-          <td style="font-weight: 700; color: var(--color-primary); font-size: 0.85rem;">$${parseFloat(app.bid_amount).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--color-success); font-size: 0.85rem;">$${parseFloat(app.bid_amount).toFixed(2)}</td>
           <td><span class="badge badge-${app.status}" style="font-size: 0.7rem;">${app.status}</span></td>
         </tr>
       `).join('');
@@ -225,7 +230,7 @@ async function loadJobseekerDashboard() {
         <tr>
           <td style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(order.gig_title)}</td>
           <td style="font-size: 0.85rem;">${escapeHtml(order.seller_name)}</td>
-          <td style="font-weight: 700; color: var(--color-primary); font-size: 0.85rem;">$${parseFloat(order.price).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--color-success); font-size: 0.85rem;">$${parseFloat(order.price).toFixed(2)}</td>
           <td><span class="badge badge-${order.status}" style="font-size: 0.7rem;">${order.status}</span></td>
         </tr>
       `).join('');
@@ -262,8 +267,8 @@ async function loadEmployerDashboard() {
       tableBody.innerHTML = jobs.map(job => `
         <tr>
           <td style="font-weight: 600;">${job.title}</td>
-          <td><span class="badge badge-in-progress">${job.category}</span></td>
-          <td style="font-weight: 700; color: var(--color-primary);">$${parseFloat(job.budget).toFixed(2)}</td>
+          <td>${getCategoryBadgeHtml(job.category)}</td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(job.budget).toFixed(2)}</td>
           <td>
             <a href="#" onclick="openApplicantsModal(${job.id}, '${job.title.replace(/'/g, "\\'")}')" class="btn btn-secondary btn-small">
               👤 ${job.applicants_count} Applicants
@@ -289,7 +294,7 @@ async function loadEmployerDashboard() {
           <td>#ORD-${order.id}</td>
           <td style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(order.gig_title)}</td>
           <td style="font-size: 0.85rem;">${escapeHtml(order.seller_name)}</td>
-          <td style="font-weight: 700; color: var(--color-primary); font-size: 0.85rem;">$${parseFloat(order.price).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--color-success); font-size: 0.85rem;">$${parseFloat(order.price).toFixed(2)}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(order.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${order.status}" style="font-size: 0.7rem;">${order.status}</span></td>
         </tr>
@@ -358,8 +363,8 @@ async function loadMyApplications() {
         <tr>
           <td style="font-weight: 600;">${app.job_title}</td>
           <td>${app.employer_name}</td>
-          <td style="color: var(--text-muted); font-weight: 500;">$${parseFloat(app.job_budget).toFixed(2)}</td>
-          <td style="font-weight: 700; color: var(--color-primary);">$${parseFloat(app.bid_amount).toFixed(2)}</td>
+          <td style="color: var(--color-success); font-weight: 600;">$${parseFloat(app.job_budget).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(app.bid_amount).toFixed(2)}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(app.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${app.status}">${app.status}</span></td>
         </tr>
@@ -385,7 +390,7 @@ async function loadPurchases() {
           <td>#ORD-${order.id}</td>
           <td style="font-weight: 600;">${order.gig_title}</td>
           <td>${order.seller_name}</td>
-          <td style="font-weight: 700; color: var(--color-primary);">$${parseFloat(order.price).toFixed(2)}</td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(order.price).toFixed(2)}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(order.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${order.status}">${order.status}</span></td>
           <td>
@@ -432,7 +437,7 @@ async function loadSalesOrders() {
             <td>#ORD-${order.id}</td>
             <td style="font-weight: 600;">${order.gig_title}</td>
             <td>${order.buyer_name}</td>
-            <td style="font-weight: 700; color: var(--color-primary);">$${parseFloat(order.price).toFixed(2)}</td>
+            <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(order.price).toFixed(2)}</td>
             <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(order.created_at).toLocaleDateString()}</td>
             <td><span class="badge badge-${order.status}">${order.status}</span></td>
             <td><div style="display: flex; gap: 8px;">${actionButtons}</div></td>
@@ -460,8 +465,8 @@ async function loadAdminModeration() {
         <tr>
           <td style="font-weight: 600;">${job.title}</td>
           <td>${job.employer_name}</td>
-          <td style="font-weight: 700;">$${parseFloat(job.budget).toFixed(2)}</td>
-          <td><span class="badge badge-in-progress">${job.category}</span></td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(job.budget).toFixed(2)}</td>
+          <td>${getCategoryBadgeHtml(job.category)}</td>
           <td><span class="badge badge-${job.status}">${job.status}</span></td>
           <td>
             <button class="btn btn-danger btn-small" onclick="adminDeleteJob(${job.id})">Delete</button>
@@ -482,8 +487,8 @@ async function loadAdminModeration() {
         <tr>
           <td style="font-weight: 600;">${gig.title}</td>
           <td>${gig.jobseeker_name}</td>
-          <td style="font-weight: 700;">$${parseFloat(gig.price).toFixed(2)}</td>
-          <td><span class="badge badge-in-progress">${gig.category}</span></td>
+          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(gig.price).toFixed(2)}</td>
+          <td>${getCategoryBadgeHtml(gig.category)}</td>
           <td>
             <button class="btn btn-danger btn-small" onclick="adminDeleteGig(${gig.id})">Delete</button>
           </td>
@@ -515,7 +520,7 @@ function setupEventListeners() {
     });
   }
 
-  // Employer - Post Job Form Submission
+  // Employer - Post/Edit Job Form Submission
   const postJobForm = document.getElementById('post-job-form');
   if (postJobForm) {
     postJobForm.addEventListener('submit', async (e) => {
@@ -528,18 +533,28 @@ function setupEventListeners() {
       const longitude = document.getElementById('job-lng').value ? parseFloat(document.getElementById('job-lng').value) : null;
 
       try {
-        const res = await fetch('/api/jobs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, category, budget, description, latitude, longitude })
-        });
+        let res;
+        if (editingJobId) {
+          res = await fetch(`/api/jobs/${editingJobId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, category, budget, description, latitude, longitude })
+          });
+        } else {
+          res = await fetch('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, category, budget, description, latitude, longitude })
+          });
+        }
         const data = await res.json();
         if (res.ok) {
-          showDashboardAlert('Job posting published!', 'success');
-          postJobForm.reset();
-          switchTab('dashboard');
+          showDashboardAlert(editingJobId ? 'Job posting updated!' : 'Job posting published!', 'success');
+          resetPostJobForm();
+          await loadEmployerManageJobs();
+          if (!editingJobId) switchTab('dashboard');
         } else {
-          showDashboardAlert(data.message || 'Failed to post job.', 'error');
+          showDashboardAlert(data.message || 'Failed to submit job.', 'error');
         }
       } catch (err) {
         console.error(err);
@@ -688,11 +703,12 @@ async function updateApplicationStatus(appId, status, jobId) {
     });
     const data = await res.json();
     if (res.ok) {
-      alert(`Application updated successfully.`);
+      showDashboardAlert('Application status updated successfully.', 'success');
       closeModal('view-applicants-modal');
-      switchTab('dashboard'); // Refresh listings
+      await loadEmployerManageJobs();
+      await loadEmployerDashboard();
     } else {
-      alert(data.message || 'Failed to update status.');
+      showDashboardAlert(data.message || 'Failed to update status.', 'error');
     }
   } catch (err) {
     console.error(err);
@@ -702,12 +718,22 @@ async function updateApplicationStatus(appId, status, jobId) {
 // Close an open job listing manually
 async function closeJobListing(jobId) {
   if (!confirm('Are you sure you want to close this job listing?')) return;
-  // Standard route updates status via application or we can update directly.
-  // In our backend, we can set job status to closed when updating application or create direct route.
-  // Let's implement this by accepting a mock application or direct SQL but wait, we can just trigger a status update or let the user handle it.
-  // Let's make it look closed. For now, since we have no direct endpoint in jobs.js to close without application, we can write a simple alert or just handle it if needed.
-  // Let's check: in jobs.js, we don't have a direct PUT /api/jobs/:id/status, but we can accept or let them know.
-  alert('Job status updated. To close job, select and accept an applicant.');
+  try {
+    const res = await fetch(`/api/jobs/${jobId}/close`, {
+      method: 'PUT'
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showDashboardAlert('Job listing closed successfully!', 'success');
+      await loadEmployerManageJobs();
+      await loadEmployerDashboard();
+    } else {
+      showDashboardAlert(data.message || 'Failed to close job.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showDashboardAlert('Network error occurred.', 'error');
+  }
 }
 
 // Buyer orders a Gig service
@@ -1028,12 +1054,12 @@ async function loadMarketplaceData() {
               ${escapeHtml(job.description)}
             </p>
             <div class="meta">
-              <span>💼 ${escapeHtml(job.employer_name)}</span>
+              <span>Employer: ${escapeHtml(job.employer_name)}</span>
               <span class="price">$${parseFloat(job.budget).toFixed(2)}</span>
             </div>
             <div class="meta" style="margin-top: 4px;">
-              <span class="badge badge-pending">${escapeHtml(job.category)}</span>
-              <span>📍 ${distanceStr} km away</span>
+              ${getCategoryBadgeHtml(job.category)}
+              <span>${distanceStr} km away</span>
             </div>
             <div style="margin-top: 10px;">
               ${currentUser.role === 'jobseeker' ? 
@@ -1049,7 +1075,7 @@ async function loadMarketplaceData() {
             <div style="min-width: 150px; font-family: var(--font-body);">
               <h4 style="margin: 0 0 5px 0; font-size: 0.95rem;">${escapeHtml(job.title)}</h4>
               <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: var(--text-muted);">Posted by ${escapeHtml(job.employer_name)}</p>
-              <p style="margin: 0 0 10px 0; font-weight: 700; color: var(--color-primary);">$${parseFloat(job.budget).toFixed(2)}</p>
+              <p style="margin: 0 0 10px 0; font-weight: 700; color: var(--color-success);">$${parseFloat(job.budget).toFixed(2)}</p>
               ${currentUser.role === 'jobseeker' ? 
                 `<button class="btn btn-primary btn-small" style="padding: 4px 8px; font-size: 0.75rem; width: 100%;" onclick="openApplyModal(${job.id}, ${job.budget}, '${job.title.replace(/'/g, "\\'")}')">Apply</button>` : 
                 `<p style="margin: 0; font-size: 0.75rem; color: var(--text-dark);">Employer view</p>`}
@@ -1117,12 +1143,12 @@ async function loadMarketplaceData() {
               ${escapeHtml(gig.description)}
             </p>
             <div class="meta">
-              <span>💡 Seller: ${escapeHtml(gig.jobseeker_name)}</span>
+              <span>Seller: ${escapeHtml(gig.jobseeker_name)}</span>
               <span class="price">$${parseFloat(gig.price).toFixed(2)}</span>
             </div>
             <div class="meta" style="margin-top: 4px;">
-              <span class="badge badge-in-progress">${escapeHtml(gig.category)}</span>
-              <span>📍 ${distanceStr} km away</span>
+              ${getCategoryBadgeHtml(gig.category)}
+              <span>${distanceStr} km away</span>
             </div>
             ${actionButton}
           </div>
@@ -1137,7 +1163,7 @@ async function loadMarketplaceData() {
             <div style="min-width: 150px; font-family: var(--font-body);">
               <h4 style="margin: 0 0 5px 0; font-size: 0.95rem;">${escapeHtml(gig.title)}</h4>
               <p style="margin: 0 0 5px 0; font-size: 0.8rem; color: var(--text-muted);">By ${escapeHtml(gig.jobseeker_name)}</p>
-              <p style="margin: 0 0 10px 0; font-weight: 700; color: var(--color-primary);">$${parseFloat(gig.price).toFixed(2)}</p>
+              <p style="margin: 0 0 10px 0; font-weight: 700; color: var(--color-success);">$${parseFloat(gig.price).toFixed(2)}</p>
               ${popupAction}
               <p style="margin: 5px 0 0 0; font-size: 0.7rem; color: var(--text-muted); text-align: right;">${distanceStr} km</p>
             </div>
@@ -1258,6 +1284,20 @@ function escapeHtml(str) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function getCategoryBadgeHtml(category) {
+  const cleanCat = (category || '').trim();
+  let className = 'category-web-development';
+  const catLower = cleanCat.toLowerCase();
+  if (catLower === 'design') {
+    className = 'category-design';
+  } else if (catLower === 'writing') {
+    className = 'category-writing';
+  } else if (catLower === 'marketing') {
+    className = 'category-marketing';
+  }
+  return `<span class="category-badge ${className}">${escapeHtml(cleanCat)}</span>`;
 }
 
 // Profile view globals
@@ -1390,7 +1430,7 @@ async function fetchAndRenderPortfolio() {
           tr.innerHTML = `
             <td style="font-weight: 600;">${escapeHtml(job.job_title)}</td>
             <td>${jobseekerText}</td>
-            <td style="font-weight: 600; color: var(--color-primary);">${bidText}</td>
+            <td style="font-weight: 600; color: var(--color-success);">${bidText}</td>
             <td>${dateStr}</td>
             <td><span class="badge badge-completed">Closed / Filled</span></td>
           `;
@@ -1445,115 +1485,23 @@ async function initProfileView() {
     form.addEventListener('submit', handleProfileUpdateSubmit);
   }
 
-  const locationPanel = document.getElementById('profile-location-panel');
   const portfolioSection = document.getElementById('profile-portfolio-section');
   const portfolioHeader = document.getElementById('profile-portfolio-header');
   const layoutContainer = document.querySelector('.profile-layout-container');
 
-  if (currentUser.role === 'admin') {
-    if (locationPanel) locationPanel.style.display = 'none';
-    if (portfolioSection) portfolioSection.style.display = 'none';
-    if (portfolioHeader) portfolioHeader.style.display = 'none';
-    if (layoutContainer) {
-      layoutContainer.style.gridTemplateColumns = '1fr';
-      layoutContainer.style.maxWidth = '600px';
-      layoutContainer.style.margin = '0 auto';
-    }
-  } else {
-    if (locationPanel) locationPanel.style.display = 'flex';
+  if (layoutContainer) {
+    layoutContainer.style.gridTemplateColumns = '1fr';
+    layoutContainer.style.maxWidth = '600px';
+    layoutContainer.style.margin = '0 auto';
+  }
+
+  if (currentUser.role === 'jobseeker') {
     if (portfolioSection) portfolioSection.style.display = 'grid';
     if (portfolioHeader) portfolioHeader.style.display = 'flex';
-    if (layoutContainer) {
-      layoutContainer.style.gridTemplateColumns = '1fr 1.2fr';
-      layoutContainer.style.maxWidth = 'none';
-      layoutContainer.style.margin = '0';
-    }
-
-    // Fetch portfolio data
     fetchAndRenderPortfolio();
-
-    if (currentUser.latitude && currentUser.longitude) {
-      profileUserLat = parseFloat(currentUser.latitude);
-      profileUserLng = parseFloat(currentUser.longitude);
-    }
-
-    const coordsDisplay = document.getElementById('profile-coords-display');
-    const syncStatus = document.getElementById('profile-sync-status');
-    if (coordsDisplay) coordsDisplay.textContent = `Lat: ${profileUserLat.toFixed(5)}, Lng: ${profileUserLng.toFixed(5)}`;
-    if (syncStatus) {
-      syncStatus.textContent = "Synced";
-      syncStatus.className = "badge badge-completed";
-    }
-
-    // Initialize Map
-    setTimeout(() => {
-      if (!profileMap) {
-        profileMap = L.map('profile-map').setView([profileUserLat, profileUserLng], 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(profileMap);
-
-        profileMap.on('click', async (e) => {
-          const { lat, lng } = e.latlng;
-          await updateProfileLocation(lat, lng);
-        });
-
-        // Hook locate button
-        const locateBtn = document.getElementById('profile-locate-btn');
-        if (locateBtn) {
-          locateBtn.addEventListener('click', () => {
-            if (navigator.geolocation) {
-              const statusEl = document.getElementById('profile-sync-status');
-              if (statusEl) {
-                statusEl.textContent = "Locating...";
-                statusEl.className = "badge badge-pending";
-              }
-              navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                  const { latitude, longitude } = position.coords;
-                  await updateProfileLocation(latitude, longitude);
-                  profileMap.setView([latitude, longitude], 13);
-                },
-                (err) => {
-                  console.warn(err);
-                  showDashboardAlert("Could not read current GPS coordinates.", "warning");
-                  if (statusEl) {
-                    statusEl.textContent = "Sync Error";
-                    statusEl.className = "badge badge-suspended";
-                  }
-                }
-              );
-            }
-          });
-        }
-      } else {
-        profileMap.setView([profileUserLat, profileUserLng], 13);
-        profileMap.invalidateSize();
-      }
-
-      if (profileUserMarker) {
-        profileUserMarker.setLatLng([profileUserLat, profileUserLng]);
-      } else {
-        const userIcon = L.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-        profileUserMarker = L.marker([profileUserLat, profileUserLng], { icon: userIcon, draggable: true })
-          .addTo(profileMap)
-          .bindPopup("<b>Your Base Location</b><br>Drag me or click map to change base search coordinates.")
-          .openPopup();
-
-        profileUserMarker.on('dragend', async (e) => {
-          const { lat, lng } = e.target.getLatLng();
-          await updateProfileLocation(lat, lng);
-        });
-      }
-    }, 200);
+  } else {
+    if (portfolioSection) portfolioSection.style.display = 'none';
+    if (portfolioHeader) portfolioHeader.style.display = 'none';
   }
 }
 
@@ -1862,5 +1810,108 @@ function downloadPortfolioResume() {
     </html>
   `);
   resumeWindow.document.close();
+}
+
+// Employer Job Management Helpers
+let editingJobId = null;
+
+async function loadEmployerManageJobs() {
+  try {
+    const res = await fetch('/api/jobs/my-jobs');
+    const jobs = await res.json();
+    const listBody = document.getElementById('post-job-manage-list');
+    if (!listBody) return;
+
+    if (jobs.length === 0) {
+      listBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">You haven't posted any jobs yet.</td></tr>`;
+    } else {
+      listBody.innerHTML = jobs.map(job => `
+        <tr>
+          <td style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(job.title)}</td>
+          <td>${getCategoryBadgeHtml(job.category)}</td>
+          <td style="font-weight: 700; color: var(--color-success); font-size: 0.85rem;">$${parseFloat(job.budget).toFixed(2)}</td>
+          <td><span class="badge badge-${job.status}" style="font-size: 0.7rem;">${job.status}</span></td>
+          <td>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button class="btn btn-primary btn-small" onclick="openApplicantsModal(${job.id}, '${job.title.replace(/'/g, "\\'")}')">Applicants</button>
+              <button class="btn btn-secondary btn-small" onclick="startEditJob(${job.id}, '${job.title.replace(/'/g, "\\'")}', '${job.category.replace(/'/g, "\\'")}', ${job.budget}, '${job.description.replace(/\r?\n/g, '\\n').replace(/'/g, "\\'")}', ${job.latitude || 'null'}, ${job.longitude || 'null'})">Edit</button>
+              ${job.status === 'open' ? `<button class="btn btn-warning btn-small" onclick="closeJobListing(${job.id})">Close</button>` : ''}
+              <button class="btn btn-danger btn-small" onclick="deleteJobListing(${job.id})">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load employer manage jobs:', err);
+  }
+}
+
+function startEditJob(id, title, category, budget, description, lat, lng) {
+  editingJobId = id;
+  document.getElementById('post-job-form-title').textContent = 'Edit Job Listing';
+  document.getElementById('post-job-form-subtitle').textContent = 'Update your job requirements and budget.';
+  
+  document.getElementById('job-title').value = title;
+  document.getElementById('job-category').value = category;
+  document.getElementById('job-budget').value = budget;
+  document.getElementById('job-desc').value = description;
+  document.getElementById('job-lat').value = lat !== null ? lat : '';
+  document.getElementById('job-lng').value = lng !== null ? lng : '';
+
+  const submitBtn = document.querySelector('#post-job-form button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = 'Update Job Posting';
+  }
+
+  let cancelEditBtn = document.getElementById('btn-cancel-job-edit');
+  if (!cancelEditBtn) {
+    cancelEditBtn = document.createElement('button');
+    cancelEditBtn.type = 'button';
+    cancelEditBtn.id = 'btn-cancel-job-edit';
+    cancelEditBtn.className = 'btn btn-secondary';
+    cancelEditBtn.textContent = 'Cancel Edit';
+    cancelEditBtn.onclick = resetPostJobForm;
+    submitBtn.parentNode.insertBefore(cancelEditBtn, submitBtn.nextSibling);
+  }
+}
+
+function resetPostJobForm() {
+  editingJobId = null;
+  document.getElementById('post-job-form-title').textContent = 'Create a New Job Listing';
+  document.getElementById('post-job-form-subtitle').textContent = 'Post a requirement for freelancers to submit proposals and bid.';
+  
+  const form = document.getElementById('post-job-form');
+  if (form) form.reset();
+
+  const submitBtn = document.querySelector('#post-job-form button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.textContent = 'Publish Job Posting';
+  }
+
+  const cancelEditBtn = document.getElementById('btn-cancel-job-edit');
+  if (cancelEditBtn) {
+    cancelEditBtn.remove();
+  }
+}
+
+async function deleteJobListing(jobId) {
+  if (!confirm('Are you sure you want to delete this job listing? All applications for this job will be permanently removed. This cannot be undone.')) return;
+  try {
+    const res = await fetch(`/api/jobs/${jobId}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showDashboardAlert('Job listing deleted successfully!', 'success');
+      await loadEmployerManageJobs();
+      await loadEmployerDashboard();
+    } else {
+      showDashboardAlert(data.message || 'Failed to delete job.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showDashboardAlert('Network error occurred.', 'error');
+  }
 }
 

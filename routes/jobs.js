@@ -55,6 +55,64 @@ router.post('/', authenticateToken, requireRole('employer'), async (req, res) =>
   }
 });
 
+// 2b. Update a job (Employer only)
+router.put('/:id', authenticateToken, requireRole('employer'), async (req, res) => {
+  const jobId = req.params.id;
+  const { title, description, budget, category, latitude, longitude } = req.body;
+
+  if (!title || !description || !budget || !category) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  try {
+    const [existing] = await db.query('SELECT * FROM jobs WHERE id = ? AND employer_id = ?', [jobId, req.user.id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: 'Job listing not found or unauthorized.' });
+    }
+
+    await db.query(
+      'UPDATE jobs SET title = ?, description = ?, budget = ?, category = ?, latitude = ?, longitude = ? WHERE id = ? AND employer_id = ?',
+      [title, description, budget, category, latitude || null, longitude || null, jobId, req.user.id]
+    );
+    res.json({ message: 'Job updated successfully!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to update job.' });
+  }
+});
+
+// 2c. Close a job (Employer only)
+router.put('/:id/close', authenticateToken, requireRole('employer'), async (req, res) => {
+  const jobId = req.params.id;
+  try {
+    const [existing] = await db.query('SELECT * FROM jobs WHERE id = ? AND employer_id = ?', [jobId, req.user.id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: 'Job listing not found or unauthorized.' });
+    }
+    await db.query('UPDATE jobs SET status = "closed" WHERE id = ?', [jobId]);
+    res.json({ message: 'Job closed successfully!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to close job.' });
+  }
+});
+
+// 2d. Delete a job (Employer only)
+router.delete('/:id', authenticateToken, requireRole('employer'), async (req, res) => {
+  const jobId = req.params.id;
+  try {
+    const [existing] = await db.query('SELECT * FROM jobs WHERE id = ? AND employer_id = ?', [jobId, req.user.id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ message: 'Job listing not found or unauthorized.' });
+    }
+    await db.query('DELETE FROM jobs WHERE id = ?', [jobId]);
+    res.json({ message: 'Job posting deleted successfully!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to delete job.' });
+  }
+});
+
 // 3. Get jobs posted by current Employer
 router.get('/my-jobs', authenticateToken, requireRole('employer'), async (req, res) => {
   try {

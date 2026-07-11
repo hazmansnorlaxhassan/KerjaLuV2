@@ -219,6 +219,42 @@ p {
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
+/* Category Badges */
+.category-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.category-web-development {
+  background-color: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.15);
+}
+
+.category-design {
+  background-color: rgba(236, 72, 153, 0.08);
+  color: #ec4899;
+  border-color: rgba(236, 72, 153, 0.15);
+}
+
+.category-writing {
+  background-color: rgba(249, 115, 22, 0.08);
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.15);
+}
+
+.category-marketing {
+  background-color: rgba(20, 184, 166, 0.08);
+  color: #14b8a6;
+  border-color: rgba(20, 184, 166, 0.15);
+}
+
 /* Forms */
 .form-group {
   margin-bottom: 20px;
@@ -627,7 +663,7 @@ table tbody tr:hover td {
   font-family: var(--font-title);
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-success);
   margin-left: auto;
 }
 
@@ -924,7 +960,7 @@ table tbody tr:hover td {
 }
 .map-list-item .price {
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-success);
 }
 
 /* Custom leaflet popups to fit the site style */
@@ -1003,6 +1039,20 @@ table tbody tr:hover td {
     grid-template-columns: 1fr !important;
   }
   .portfolio-container {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Post Job Two-Column Responsive Layout */
+.post-job-layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr;
+  gap: 25px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .post-job-layout {
     grid-template-columns: 1fr !important;
   }
 }
