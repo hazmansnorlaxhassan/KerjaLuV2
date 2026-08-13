@@ -1205,7 +1205,7 @@ table tbody tr:hover td {
   left: 0;
   width: 100%;
   height: 100%;
-  background: var(--bg-surface);
+  background: #ffffff !important;
   border: 1px solid var(--border-color);
   border-radius: 24px;
   box-shadow: 0 15px 35px rgba(15, 23, 42, 0.12);
@@ -1223,22 +1223,26 @@ table tbody tr:hover td {
   cursor: grabbing;
 }
 
-/* Card Depth Stacking */
-.swipe-card:nth-last-child(1) {
-  z-index: 3;
+/* Card Depth Stacking based on HTML index (1 = Top Card, 2 = Middle, 3 = Back) */
+.swipe-card:nth-child(1) {
+  z-index: 10 !important;
+  transform: translate(0px, 0px) scale(1) !important;
+  opacity: 1 !important;
 }
-.swipe-card:nth-last-child(2) {
-  z-index: 2;
-  transform: translateY(12px) scale(0.95) !important;
-  opacity: 0.85;
+.swipe-card:nth-child(2) {
+  z-index: 5 !important;
+  transform: translateY(14px) scale(0.95) !important;
+  opacity: 0.85 !important;
+  pointer-events: none !important;
 }
-.swipe-card:nth-last-child(3) {
-  z-index: 1;
-  transform: translateY(24px) scale(0.9) !important;
-  opacity: 0.6;
+.swipe-card:nth-child(3) {
+  z-index: 1 !important;
+  transform: translateY(28px) scale(0.9) !important;
+  opacity: 0.6 !important;
+  pointer-events: none !important;
 }
-.swipe-card:nth-last-child(n+4) {
-  display: none;
+.swipe-card:nth-child(n+4) {
+  display: none !important;
 }
 
 /* Swipe Feedback Stamps */

@@ -2503,7 +2503,7 @@ function renderTinderSwipeDeck() {
 }
 
 function attachTopCardGestures() {
-  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  const topCard = document.querySelector('.swipe-card:nth-child(1)');
   if (!topCard) return;
 
   // Touch Events
@@ -2524,7 +2524,7 @@ function onDragStart(e) {
   startTouchX = clientX;
   startTouchY = clientY;
 
-  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  const topCard = document.querySelector('.swipe-card:nth-child(1)');
   if (topCard) topCard.style.transition = 'none';
 }
 
@@ -2537,7 +2537,7 @@ function onDragMove(e) {
   currentDeltaY = clientY - startTouchY;
   const rotateDeg = currentDeltaX * 0.08;
 
-  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  const topCard = document.querySelector('.swipe-card:nth-child(1)');
   if (topCard) {
     topCard.style.transform = `translate(${currentDeltaX}px, ${currentDeltaY}px) rotate(${rotateDeg}deg)`;
   }
@@ -2570,7 +2570,7 @@ function onDragEnd() {
   window.removeEventListener('mousemove', onDragMove);
   window.removeEventListener('mouseup', onDragEnd);
 
-  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  const topCard = document.querySelector('.swipe-card:nth-child(1)');
   if (!topCard) return;
 
   topCard.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease';
@@ -2599,7 +2599,7 @@ function triggerCardSwipe(direction) {
 }
 
 function completeCardSwipe(direction) {
-  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  const topCard = document.querySelector('.swipe-card:nth-child(1)');
   if (!topCard) return;
 
   const currentItem = marketplaceItemsData[tinderCurrentIndex];
