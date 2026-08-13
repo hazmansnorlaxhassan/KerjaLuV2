@@ -809,11 +809,8 @@ table tbody tr:hover td {
     padding: 20px 15px !important;
     width: 100% !important;
   }
-}
-
-@media (max-width: 768px) {
   .burger-btn {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     justify-content: space-around;
     width: 28px;
@@ -833,12 +830,12 @@ table tbody tr:hover td {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .sidebar-collapse-content {
-    display: none;
+    display: none !important;
     width: 100%;
     flex-direction: column;
   }
   .sidebar.menu-open .sidebar-collapse-content {
-    display: flex;
+    display: flex !important;
   }
   
   /* Animate Burger lines into an X */
@@ -854,20 +851,21 @@ table tbody tr:hover td {
   }
 
   .sidebar-menu {
-    flex-direction: row !important;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column !important;
     width: 100%;
     margin-top: 15px;
-    gap: 10px;
+    gap: 8px;
   }
   .sidebar-menu li {
+    width: 100%;
     margin: 0;
   }
   .sidebar-menu li a {
-    padding: 8px 12px !important;
-    font-size: 0.85rem;
+    width: 100%;
+    padding: 10px 14px !important;
+    font-size: 0.9rem;
   }
+}
   .sidebar-user {
     width: 100%;
     display: flex;

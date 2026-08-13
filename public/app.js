@@ -2291,6 +2291,11 @@ let currentDeltaX = 0;
 let currentDeltaY = 0;
 
 async function initMarketplaceExplorer() {
+  if (window.innerWidth <= 992) {
+    setMarketplaceViewMode('tinder');
+  } else {
+    setMarketplaceViewMode(currentMarketViewMode || 'map');
+  }
   await loadMarketplaceData();
 }
 
