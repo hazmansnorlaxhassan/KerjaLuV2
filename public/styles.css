@@ -13,8 +13,8 @@
   --color-primary: #eab308; /* Vibrant Yellow Accent */
   --color-primary-glow: rgba(234, 179, 8, 0.1);
   --color-secondary: #ca8a04; /* Gold/Amber */
-  --gradient-main: linear-gradient(135deg, #eab308 0%, #facc15 100%);
-  --gradient-glow: linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(250, 204, 21, 0.15) 100%);
+  --gradient-main: #eab308;
+  --gradient-glow: rgba(234, 179, 8, 0.15);
 
   --text-main: #0f172a;
   --text-muted: #475569;
@@ -350,9 +350,7 @@ nav ul li a:hover {
   font-size: 3.5rem;
   line-height: 1.2;
   margin-bottom: 20px;
-  background: linear-gradient(to right, #0f172a, #eab308);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-main);
 }
 
 .hero p {
