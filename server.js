@@ -22,6 +22,10 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/jobs', require('./routes/jobs'));
 app.use('/api/gigs', require('./routes/gigs'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/messages', require('./routes/messages'));
+app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/wallet', require('./routes/wallet'));
 
 // Clean URL Front-end Routing
 app.get('/', (req, res) => {

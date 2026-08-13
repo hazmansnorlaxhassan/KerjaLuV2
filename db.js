@@ -36,7 +36,69 @@ async function initializeDatabase() {
     // 3. Check if tables exist by querying the 'users' table
     try {
       await pool.query('SELECT 1 FROM users LIMIT 1');
-      console.log('Database tables verified.');
+      console.log('Database tables verified. Running migrations for new feature tables if needed...');
+      
+      // Auto-migration: check if balance column exists in users
+      try {
+        await pool.query('SELECT balance FROM users LIMIT 1');
+      } catch (colErr) {
+        if (colErr.code === 'ER_BAD_FIELD_ERROR') {
+          await pool.query('ALTER TABLE users ADD COLUMN balance DECIMAL(10,2) NOT NULL DEFAULT 1000.00');
+          console.log('Migration: Added balance column to users table.');
+        }
+      }
+
+      // Create new tables if they don't exist
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          sender_id INT NOT NULL,
+          receiver_id INT NOT NULL,
+          content TEXT NOT NULL,
+          is_read TINYINT(1) DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS reviews (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          order_id INT NULL,
+          reviewer_id INT NOT NULL,
+          reviewee_id INT NOT NULL,
+          gig_id INT NULL,
+          rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          comment TEXT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE,
+          FOREIGN KEY (reviewee_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          title VARCHAR(150) NOT NULL,
+          message TEXT NOT NULL,
+          link VARCHAR(255) NULL,
+          is_read TINYINT(1) DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          type ENUM('deposit', 'escrow_hold', 'escrow_release', 'refund') NOT NULL,
+          amount DECIMAL(10, 2) NOT NULL,
+          reference_type VARCHAR(50) NULL,
+          reference_id INT NULL,
+          description VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+      `);
+      console.log('Database schema migrations completed successfully.');
     } catch (err) {
       // If table doesn't exist, read schema.sql and execute it
       if (err.code === 'ER_NO_SUCH_TABLE') {

@@ -215,11 +215,13 @@ router.post('/:id/apply', authenticateToken, requireRole('jobseeker'), async (re
 
   try {
     // Check if job exists and is open
-    const [jobs] = await db.query('SELECT status FROM jobs WHERE id = ?', [jobId]);
+    const [jobs] = await db.query('SELECT employer_id, title, status FROM jobs WHERE id = ?', [jobId]);
     if (jobs.length === 0) {
       return res.status(404).json({ message: 'Job not found.' });
     }
-    if (jobs[0].status !== 'open') {
+    const job = jobs[0];
+
+    if (job.status !== 'open') {
       return res.status(400).json({ message: 'Job posting is closed.' });
     }
 
@@ -236,6 +238,18 @@ router.post('/:id/apply', authenticateToken, requireRole('jobseeker'), async (re
     await db.query(
       'INSERT INTO job_applications (job_id, jobseeker_id, proposal, bid_amount) VALUES (?, ?, ?, ?)',
       [jobId, req.user.id, proposal, bid_amount]
+    );
+
+    // Notify Employer
+    await db.query(
+      'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+      [
+        job.employer_id,
+        'job',
+        'New Job Proposal Received!',
+        `${req.user.username} applied for "${job.title}" with bid RM ${parseFloat(bid_amount).toFixed(2)}.`,
+        'my-jobs'
+      ]
     );
 
     res.status(201).json({ message: 'Application submitted successfully!' });
@@ -257,7 +271,7 @@ router.post('/applications/:id/status', authenticateToken, requireRole('employer
   try {
     // Verify that the employer owns the job of this application
     const [applications] = await db.query(
-      `SELECT ja.*, j.employer_id, j.id AS job_id 
+      `SELECT ja.*, j.employer_id, j.title AS job_title, j.id AS job_id 
        FROM job_applications ja 
        JOIN jobs j ON ja.job_id = j.id 
        WHERE ja.id = ?`,
@@ -283,6 +297,30 @@ router.post('/applications/:id/status', authenticateToken, requireRole('employer
       await db.query(
         'UPDATE job_applications SET status = \'rejected\' WHERE job_id = ? AND id != ?',
         [application.job_id, applicationId]
+      );
+
+      // Notify accepted applicant
+      await db.query(
+        'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+        [
+          application.jobseeker_id,
+          'job',
+          'Proposal Accepted 🎉',
+          `Your application for "${application.job_title}" was ACCEPTED by the employer!`,
+          'my-applications'
+        ]
+      );
+    } else {
+      // Notify rejected applicant
+      await db.query(
+        'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+        [
+          application.jobseeker_id,
+          'job',
+          'Proposal Update',
+          `Your proposal for "${application.job_title}" was updated to ${status}.`,
+          'my-applications'
+        ]
       );
     }
 

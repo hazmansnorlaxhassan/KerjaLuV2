@@ -31,6 +31,13 @@ async function checkAuth() {
     // Render Side Menu options based on role
     renderSidebarMenu();
 
+    // Fetch Wallet Balance & Notifications
+    await fetchHeaderWalletBalance();
+    await fetchNotifications();
+
+    // Start background notification polling every 10s
+    setInterval(fetchNotifications, 10000);
+
     // Default tab
     switchTab('dashboard');
   } catch (err) {
@@ -50,6 +57,7 @@ function renderSidebarMenu() {
       <li id="menu-my-applications"><a href="#" onclick="switchTab('my-applications')">My Applications</a></li>
       <li id="menu-sales-orders"><a href="#" onclick="switchTab('sales-orders')">Orders Received (Sales)</a></li>
       <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')">Bought Gigs (Purchases)</a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
       <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
     `;
   } else if (currentUser.role === 'employer') {
@@ -58,12 +66,14 @@ function renderSidebarMenu() {
       <li id="menu-marketplace-explorer"><a href="#" onclick="switchTab('marketplace-explorer')">Marketplace Explorer</a></li>
       <li id="menu-employer-post-job"><a href="#" onclick="switchTab('employer-post-job')">Post a Job</a></li>
       <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')">Purchases History</a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
       <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
     `;
   } else if (currentUser.role === 'admin') {
     html = `
       <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')">Admin Stats</a></li>
       <li id="menu-admin-moderation"><a href="#" onclick="switchTab('admin-moderation')">Moderate Platform</a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
       <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
     `;
   }
@@ -162,6 +172,11 @@ async function switchTab(tabName) {
     welcomeSubtitle.textContent = `View and update your credentials and base search location.`;
     document.getElementById('view-profile').style.display = 'block';
     await initProfileView();
+  } else if (tabName === 'messages') {
+    welcomeTitle.textContent = `Direct Messages`;
+    welcomeSubtitle.textContent = `Communicate directly with employers and jobseekers.`;
+    document.getElementById('view-messages').style.display = 'block';
+    await loadConversations();
   }
 }
 
@@ -389,14 +404,22 @@ async function loadPurchases() {
         <tr>
           <td>#ORD-${order.id}</td>
           <td style="font-weight: 600;">${order.gig_title}</td>
-          <td>${order.seller_name}</td>
-          <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(order.price).toFixed(2)}</td>
+          <td>
+            ${order.seller_name}
+            <button class="btn btn-secondary btn-small" style="padding: 2px 6px; font-size: 0.75rem; margin-left: 5px;" onclick="openChatAndNavigate(${order.seller_id})">💬 Chat</button>
+          </td>
+          <td style="font-weight: 700; color: var(--color-success);">RM ${parseFloat(order.price).toFixed(2)}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(order.created_at).toLocaleDateString()}</td>
           <td><span class="badge badge-${order.status}">${order.status}</span></td>
           <td>
-            ${order.status === 'pending' ? 
-              `<button class="btn btn-danger btn-small" onclick="updateOrderStatus(${order.id}, 'cancelled')">Cancel Order</button>` : 
-              `<span style="font-size: 0.85rem; color: var(--text-dark);">No Action</span>`}
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${order.status === 'pending' ? 
+                `<button class="btn btn-danger btn-small" onclick="updateOrderStatus(${order.id}, 'cancelled')">Cancel Order</button>` : ''}
+              ${order.status === 'completed' ? 
+                `<button class="btn btn-primary btn-small" style="padding: 4px 10px;" onclick="openReviewModal(${order.id})">⭐ Review</button>` : ''}
+              ${order.status !== 'pending' && order.status !== 'completed' ? 
+                `<span style="font-size: 0.85rem; color: var(--text-muted);">In Progress</span>` : ''}
+            </div>
           </td>
         </tr>
       `).join('');
@@ -429,15 +452,18 @@ async function loadSalesOrders() {
             <button class="btn btn-danger btn-small" onclick="updateOrderStatus(${order.id}, 'cancelled')">Cancel</button>
           `;
         } else {
-          actionButtons = `<span style="font-size: 0.85rem; color: var(--text-dark);">Settled</span>`;
+          actionButtons = `<span style="font-size: 0.85rem; color: var(--text-muted);">Settled</span>`;
         }
 
         return `
           <tr>
             <td>#ORD-${order.id}</td>
             <td style="font-weight: 600;">${order.gig_title}</td>
-            <td>${order.buyer_name}</td>
-            <td style="font-weight: 700; color: var(--color-success);">$${parseFloat(order.price).toFixed(2)}</td>
+            <td>
+              ${order.buyer_name}
+              <button class="btn btn-secondary btn-small" style="padding: 2px 6px; font-size: 0.75rem; margin-left: 5px;" onclick="openChatAndNavigate(${order.buyer_id})">💬 Chat</button>
+            </td>
+            <td style="font-weight: 700; color: var(--color-success);">RM ${parseFloat(order.price).toFixed(2)}</td>
             <td style="font-size: 0.85rem; color: var(--text-muted);">${new Date(order.created_at).toLocaleDateString()}</td>
             <td><span class="badge badge-${order.status}">${order.status}</span></td>
             <td><div style="display: flex; gap: 8px;">${actionButtons}</div></td>
@@ -1912,6 +1938,689 @@ async function deleteJobListing(jobId) {
   } catch (err) {
     console.error(err);
     showDashboardAlert('Network error occurred.', 'error');
+  }
+}
+
+/* ========================================================================== */
+/* WALLET & ESCROW FUNCTIONS                                                  */
+/* ========================================================================== */
+async function fetchHeaderWalletBalance() {
+  try {
+    const res = await fetch('/api/wallet');
+    if (res.ok) {
+      const data = await res.json();
+      const headerBal = document.getElementById('header-wallet-balance');
+      if (headerBal) headerBal.textContent = `RM ${data.balance}`;
+      const modalBal = document.getElementById('modal-wallet-balance');
+      if (modalBal) modalBal.textContent = `RM ${data.balance}`;
+    }
+  } catch (err) {
+    console.error('Wallet fetch error:', err);
+  }
+}
+
+async function openWalletModal() {
+  try {
+    const res = await fetch('/api/wallet');
+    if (res.ok) {
+      const data = await res.json();
+      document.getElementById('modal-wallet-balance').textContent = `RM ${data.balance}`;
+      const tbody = document.getElementById('wallet-transactions-list');
+      if (!data.transactions || data.transactions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--text-muted); text-align: center;">No transaction history yet.</td></tr>';
+      } else {
+        tbody.innerHTML = data.transactions.map(t => `
+          <tr>
+            <td><span class="badge badge-${t.type === 'deposit' || t.type === 'escrow_release' || t.type === 'refund' ? 'active' : 'pending'}">${t.type}</span></td>
+            <td>${t.description}</td>
+            <td style="font-weight:700; color:${t.type === 'deposit' || t.type === 'escrow_release' || t.type === 'refund' ? 'var(--color-success)' : 'var(--color-danger)'};">
+              ${t.type === 'deposit' || t.type === 'escrow_release' || t.type === 'refund' ? '+' : '-'} RM ${parseFloat(t.amount).toFixed(2)}
+            </td>
+            <td>${new Date(t.created_at).toLocaleDateString()}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+  openModal('wallet-modal');
+}
+
+async function submitWalletDeposit(e) {
+  e.preventDefault();
+  const amountInput = document.getElementById('wallet-deposit-amount');
+  const amount = parseFloat(amountInput.value);
+  if (!amount || amount <= 0) return;
+
+  try {
+    const res = await fetch('/api/wallet/deposit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showDashboardAlert(data.message, 'success');
+      amountInput.value = '';
+      await fetchHeaderWalletBalance();
+      closeModal('wallet-modal');
+    } else {
+      showDashboardAlert(data.message || 'Deposit failed.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showDashboardAlert('Network error occurred.', 'error');
+  }
+}
+
+/* ========================================================================== */
+/* NOTIFICATIONS FUNCTIONS                                                   */
+/* ========================================================================== */
+async function fetchNotifications() {
+  try {
+    const res = await fetch('/api/notifications');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const badge = document.getElementById('notif-badge-count');
+    if (badge) {
+      if (data.unreadCount > 0) {
+        badge.textContent = data.unreadCount;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    const container = document.getElementById('notif-list-container');
+    if (container) {
+      if (!data.notifications || data.notifications.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No notifications yet.</div>';
+      } else {
+        container.innerHTML = data.notifications.map(n => `
+          <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="handleNotifClick(${n.id}, '${n.link || ''}')">
+            <div style="font-weight: 600; margin-bottom: 2px;">${n.title}</div>
+            <div style="color: var(--text-muted);">${n.message}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">${new Date(n.created_at).toLocaleString()}</div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function toggleNotifDropdown() {
+  const panel = document.getElementById('notif-dropdown-panel');
+  if (panel) {
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    await fetch('/api/notifications/read-all', { method: 'PUT' });
+    await fetchNotifications();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleNotifClick(notifId, link) {
+  try {
+    await fetch(`/api/notifications/${notifId}/read`, { method: 'PUT' });
+    fetchNotifications();
+    const panel = document.getElementById('notif-dropdown-panel');
+    if (panel) panel.style.display = 'none';
+
+    if (link) {
+      if (link.startsWith('messages:')) {
+        const otherUserId = link.split(':')[1];
+        await switchTab('messages');
+        await openChatThread(otherUserId);
+      } else if (link === 'orders:purchases') {
+        switchTab('purchases');
+      } else if (link === 'orders:sales') {
+        switchTab('sales-orders');
+      } else if (link === 'my-jobs') {
+        switchTab('dashboard');
+      } else if (link === 'my-applications') {
+        switchTab('my-applications');
+      } else if (link === 'wallet') {
+        openWalletModal();
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+/* ========================================================================== */
+/* DIRECT MESSAGING CHAT FUNCTIONS                                            */
+/* ========================================================================== */
+let activeChatPartnerId = null;
+
+async function loadConversations() {
+  try {
+    const res = await fetch('/api/messages/conversations');
+    if (!res.ok) return;
+    const threads = await res.json();
+
+    const list = document.getElementById('messages-threads-list');
+    if (!threads || threads.length === 0) {
+      list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No active conversations yet.</div>';
+      return;
+    }
+
+    list.innerHTML = threads.map(t => `
+      <div class="chat-thread-item ${activeChatPartnerId == t.other_user_id ? 'active' : ''}" onclick="openChatThread(${t.other_user_id})">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+          <strong style="font-size:0.9rem;">${t.other_username}</strong>
+          ${t.unread_count > 0 ? `<span class="badge badge-pending" style="font-size:0.7rem;">${t.unread_count} new</span>` : ''}
+        </div>
+        <div style="font-size:0.8rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">
+          ${t.last_sender_id == currentUser.id ? 'You: ' : ''}${t.last_message}
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function openChatThread(otherUserId) {
+  activeChatPartnerId = otherUserId;
+  const input = document.getElementById('chat-input-text');
+  const btn = document.getElementById('chat-send-btn');
+  if (input) input.disabled = false;
+  if (btn) btn.disabled = false;
+
+  try {
+    const res = await fetch(`/api/messages/thread/${otherUserId}`);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    document.getElementById('chat-partner-name').textContent = data.partner.username;
+    const roleBadge = document.getElementById('chat-partner-role');
+    roleBadge.textContent = data.partner.role;
+    roleBadge.className = `badge role-badge badge-${data.partner.role}`;
+    roleBadge.style.display = 'inline-block';
+
+    const container = document.getElementById('chat-messages-container');
+    if (!data.messages || data.messages.length === 0) {
+      container.innerHTML = '<div style="margin:auto; text-align:center; color:var(--text-muted); font-size:0.9rem;">No messages exchanged yet. Send a greeting!</div>';
+    } else {
+      container.innerHTML = data.messages.map(m => `
+        <div class="chat-bubble ${m.sender_id == currentUser.id ? 'chat-bubble-mine' : 'chat-bubble-other'}">
+          <div>${m.content}</div>
+          <div style="font-size:0.7rem; opacity:0.7; margin-top:2px; text-align:${m.sender_id == currentUser.id ? 'right' : 'left'};">
+            ${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    container.scrollTop = container.scrollHeight;
+    await loadConversations();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function sendChatMessage(e) {
+  if (e) e.preventDefault();
+  if (!activeChatPartnerId) return;
+
+  const input = document.getElementById('chat-input-text');
+  const content = input.value.trim();
+  if (!content) return;
+
+  try {
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        receiver_id: activeChatPartnerId,
+        content
+      })
+    });
+
+    if (res.ok) {
+      input.value = '';
+      await openChatThread(activeChatPartnerId);
+    } else {
+      const data = await res.json();
+      showDashboardAlert(data.message || 'Failed to send message.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function openChatAndNavigate(otherUserId) {
+  await switchTab('messages');
+  await openChatThread(otherUserId);
+}
+
+/* ========================================================================== */
+/* RATINGS & REVIEWS FUNCTIONS                                               */
+/* ========================================================================== */
+let selectedRating = 5;
+
+function setRating(val) {
+  selectedRating = val;
+  document.getElementById('review-rating-value').value = val;
+  const btns = document.querySelectorAll('.star-picker-btn');
+  btns.forEach(btn => {
+    const starNum = parseInt(btn.getAttribute('data-star'));
+    if (starNum <= val) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+function openReviewModal(orderId) {
+  document.getElementById('review-order-id').value = orderId;
+  setRating(5);
+  document.getElementById('review-comment').value = '';
+  openModal('review-modal');
+}
+
+async function submitReview(e) {
+  e.preventDefault();
+  const order_id = document.getElementById('review-order-id').value;
+  const rating = parseInt(document.getElementById('review-rating-value').value);
+  const comment = document.getElementById('review-comment').value;
+
+  try {
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id, rating, comment })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showDashboardAlert(data.message, 'success');
+      closeModal('review-modal');
+      await switchTab(currentTab);
+    } else {
+      showDashboardAlert(data.message || 'Failed to submit review.', 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showDashboardAlert('Network error occurred.', 'error');
+  }
+}
+
+// Bind submit handlers
+document.addEventListener('DOMContentLoaded', () => {
+  const depositForm = document.getElementById('wallet-deposit-form');
+  if (depositForm) depositForm.addEventListener('submit', submitWalletDeposit);
+
+  const chatForm = document.getElementById('chat-send-form');
+  if (chatForm) chatForm.addEventListener('submit', sendChatMessage);
+
+  const reviewForm = document.getElementById('review-form');
+  if (reviewForm) reviewForm.addEventListener('submit', submitReview);
+});
+
+/* ========================================================================== */
+/* MARKETPLACE & TINDER SWIPE DECK ("GIGMATCH MODE") ENGINE                   */
+/* ========================================================================== */
+let currentMarketType = 'jobs'; // 'jobs' or 'gigs'
+let currentMarketViewMode = 'map'; // 'map' or 'tinder'
+let marketplaceItemsData = [];
+let tinderCurrentIndex = 0;
+let isDraggingCard = false;
+let startTouchX = 0;
+let startTouchY = 0;
+let currentDeltaX = 0;
+let currentDeltaY = 0;
+
+async function initMarketplaceExplorer() {
+  await loadMarketplaceData();
+}
+
+function setMarketplaceType(type) {
+  currentMarketType = type;
+  const btnJobs = document.getElementById('toggle-search-jobs');
+  const btnGigs = document.getElementById('toggle-search-gigs');
+
+  if (type === 'jobs') {
+    if (btnJobs) btnJobs.className = 'btn btn-primary';
+    if (btnGigs) btnGigs.className = 'btn btn-secondary';
+  } else {
+    if (btnJobs) btnJobs.className = 'btn btn-secondary';
+    if (btnGigs) btnGigs.className = 'btn btn-primary';
+  }
+
+  loadMarketplaceData();
+}
+
+function setMarketplaceViewMode(mode) {
+  currentMarketViewMode = mode;
+  const btnMap = document.getElementById('view-mode-map');
+  const btnTinder = document.getElementById('view-mode-tinder');
+
+  const mapSplitView = document.getElementById('marketplace-map-split-view');
+  const tinderView = document.getElementById('tinder-swipe-view');
+
+  if (mode === 'map') {
+    if (btnMap) btnMap.className = 'btn btn-primary btn-small';
+    if (btnTinder) btnTinder.className = 'btn btn-secondary btn-small';
+    if (mapSplitView) mapSplitView.style.display = 'grid';
+    if (tinderView) tinderView.style.display = 'none';
+  } else {
+    if (btnMap) btnMap.className = 'btn btn-secondary btn-small';
+    if (btnTinder) btnTinder.className = 'btn btn-primary btn-small';
+    if (mapSplitView) mapSplitView.style.display = 'none';
+    if (tinderView) tinderView.style.display = 'block';
+    renderTinderSwipeDeck();
+  }
+}
+
+async function loadMarketplaceData() {
+  const keyword = document.getElementById('market-search-input')?.value || '';
+  const category = document.getElementById('market-category-filter')?.value || '';
+
+  const endpoint = currentMarketType === 'jobs' ? '/api/jobs' : '/api/gigs';
+  let url = `${endpoint}?search=${encodeURIComponent(keyword)}&category=${encodeURIComponent(category)}`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    marketplaceItemsData = await res.json();
+
+    // Render list results for map mode
+    renderMarketplaceListResults(marketplaceItemsData);
+
+    // Initialize or render Tinder Deck
+    tinderCurrentIndex = 0;
+    if (currentMarketViewMode === 'tinder') {
+      renderTinderSwipeDeck();
+    }
+  } catch (err) {
+    console.error('Error loading marketplace data:', err);
+  }
+}
+
+function renderMarketplaceListResults(items) {
+  const container = document.getElementById('marketplace-list-results');
+  if (!container) return;
+
+  if (!items || items.length === 0) {
+    container.innerHTML = `<div style="padding:30px; text-align:center; color:var(--text-muted);">No ${currentMarketType} found matching criteria.</div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => {
+    const title = item.title;
+    const author = item.employer_name || item.jobseeker_name || 'Verified User';
+    const amount = item.budget || item.price;
+    const category = item.category;
+    const desc = item.description;
+
+    return `
+      <div class="glass-panel" style="padding: 16px; border-radius: var(--radius-md);">
+        <div style="display:flex; justify-space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <h4 style="margin:0; font-size:1rem;">${escapeHtml(title)}</h4>
+            <span style="font-size:0.8rem; color:var(--text-muted);">by ${escapeHtml(author)}</span>
+          </div>
+          <span style="font-size:1.1rem; font-weight:700; color:var(--color-success);">RM ${parseFloat(amount).toFixed(2)}</span>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(desc)}</p>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="badge" style="background:rgba(234, 179, 8, 0.15); color:var(--text-dark);">${escapeHtml(category)}</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-secondary btn-small" style="padding:4px 8px; font-size:0.75rem;" onclick="openChatAndNavigate(${item.employer_id || item.jobseeker_id})">💬 Chat</button>
+            ${currentMarketType === 'jobs' ? 
+              (currentUser.role === 'jobseeker' ? `<button class="btn btn-primary btn-small" style="padding:4px 10px;" onclick="openApplyModal(${item.id}, '${escapeHtml(title)}', ${amount})">Apply Bid</button>` : '') :
+              (item.jobseeker_id !== currentUser.id ? `<button class="btn btn-primary btn-small" style="padding:4px 10px;" onclick="quickOrderGig(${item.id})">Order Gig</button>` : '')
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ========================================================================== */
+/* TINDER SWIPE DECK RENDER & GESTURES                                        */
+/* ========================================================================== */
+function renderTinderSwipeDeck() {
+  const stackContainer = document.getElementById('swipe-card-stack');
+  if (!stackContainer) return;
+
+  const remainingItems = marketplaceItemsData.slice(tinderCurrentIndex);
+
+  if (remainingItems.length === 0) {
+    stackContainer.innerHTML = `
+      <div class="glass-panel text-center" style="margin:auto; padding:40px 20px; border-radius:24px;">
+        <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+        <h3>That's all for now!</h3>
+        <p style="margin-top:5px; font-size:0.9rem;">You've swiped through all available ${currentMarketType}.</p>
+        <button class="btn btn-primary" style="margin-top:15px;" onclick="tinderCurrentIndex = 0; renderTinderSwipeDeck();">🔄 Start Over</button>
+      </div>
+    `;
+    return;
+  }
+
+  // Render top 3 stacked cards
+  const cardsToRender = remainingItems.slice(0, 3);
+  stackContainer.innerHTML = cardsToRender.map((item, index) => {
+    const isTop = index === 0;
+    const title = item.title;
+    const author = item.employer_name || item.jobseeker_name || 'Verified User';
+    const amount = item.budget || item.price;
+    const category = item.category;
+    const desc = item.description;
+
+    return `
+      <div class="swipe-card" id="swipe-card-${tinderCurrentIndex + index}" data-item-id="${item.id}" data-author-id="${item.employer_id || item.jobseeker_id}">
+        <!-- Stamp overlays for top card -->
+        ${isTop ? `
+          <div class="swipe-stamp swipe-stamp-like" id="stamp-like">APPLY / ORDER</div>
+          <div class="swipe-stamp swipe-stamp-pass" id="stamp-pass">PASS</div>
+        ` : ''}
+
+        <!-- Top Header Pill Badges -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span class="badge" style="background:rgba(234, 179, 8, 0.15); color:var(--text-main); font-weight:600; padding:6px 12px; font-size:0.85rem;">
+              🏷️ ${escapeHtml(category)}
+            </span>
+            <span style="font-size:1.3rem; font-weight:800; color:var(--color-success);">
+              RM ${parseFloat(amount).toFixed(2)}
+            </span>
+          </div>
+
+          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:6px; color:var(--text-main); line-height:1.3;">
+            ${escapeHtml(title)}
+          </h2>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+            👤 Posted by <strong>${escapeHtml(author)}</strong>
+          </p>
+        </div>
+
+        <!-- Center Description Snippet -->
+        <div style="background:var(--bg-primary); padding:14px; border-radius:16px; border:1px solid var(--border-color); margin-bottom:15px; flex:1; overflow:hidden;">
+          <p style="font-size:0.88rem; color:var(--text-main); line-height:1.5; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">
+            ${escapeHtml(desc)}
+          </p>
+        </div>
+
+        <!-- Card Footer -->
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:12px;">
+          <span>📍 Swipe left to Pass, right to Apply</span>
+          <span style="color:var(--color-primary); font-weight:600;">Swipe Right ➔</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Attach Gesture listeners to top card
+  attachTopCardGestures();
+}
+
+function attachTopCardGestures() {
+  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  if (!topCard) return;
+
+  // Touch Events
+  topCard.addEventListener('touchstart', onDragStart, { passive: true });
+  topCard.addEventListener('touchmove', onDragMove, { passive: false });
+  topCard.addEventListener('touchend', onDragEnd);
+
+  // Mouse Events
+  topCard.addEventListener('mousedown', onDragStart);
+  window.addEventListener('mousemove', onDragMove);
+  window.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragStart(e) {
+  isDraggingCard = true;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  startTouchX = clientX;
+  startTouchY = clientY;
+
+  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  if (topCard) topCard.style.transition = 'none';
+}
+
+function onDragMove(e) {
+  if (!isDraggingCard) return;
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  currentDeltaX = clientX - startTouchX;
+  currentDeltaY = clientY - startTouchY;
+  const rotateDeg = currentDeltaX * 0.08;
+
+  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  if (topCard) {
+    topCard.style.transform = `translate(${currentDeltaX}px, ${currentDeltaY}px) rotate(${rotateDeg}deg)`;
+  }
+
+  // Update Stamp Opacity
+  const stampLike = document.getElementById('stamp-like');
+  const stampPass = document.getElementById('stamp-pass');
+  if (stampLike && stampPass) {
+    if (currentDeltaX > 20) {
+      stampLike.style.opacity = Math.min(currentDeltaX / 100, 1);
+      stampPass.style.opacity = 0;
+    } else if (currentDeltaX < -20) {
+      stampPass.style.opacity = Math.min(Math.abs(currentDeltaX) / 100, 1);
+      stampLike.style.opacity = 0;
+    } else {
+      stampLike.style.opacity = 0;
+      stampPass.style.opacity = 0;
+    }
+  }
+
+  if (e.touches && Math.abs(currentDeltaX) > 15) {
+    e.preventDefault();
+  }
+}
+
+function onDragEnd() {
+  if (!isDraggingCard) return;
+  isDraggingCard = false;
+
+  window.removeEventListener('mousemove', onDragMove);
+  window.removeEventListener('mouseup', onDragEnd);
+
+  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  if (!topCard) return;
+
+  topCard.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease';
+
+  if (currentDeltaX > 100) {
+    // Swiped Right -> Like / Action
+    completeCardSwipe('right');
+  } else if (currentDeltaX < -100) {
+    // Swiped Left -> Pass
+    completeCardSwipe('left');
+  } else {
+    // Reset position
+    topCard.style.transform = 'translate(0px, 0px) rotate(0deg)';
+    const stampLike = document.getElementById('stamp-like');
+    const stampPass = document.getElementById('stamp-pass');
+    if (stampLike) stampLike.style.opacity = 0;
+    if (stampPass) stampPass.style.opacity = 0;
+  }
+
+  currentDeltaX = 0;
+  currentDeltaY = 0;
+}
+
+function triggerCardSwipe(direction) {
+  completeCardSwipe(direction);
+}
+
+function completeCardSwipe(direction) {
+  const topCard = document.querySelector('.swipe-card:nth-last-child(1)');
+  if (!topCard) return;
+
+  const currentItem = marketplaceItemsData[tinderCurrentIndex];
+
+  if (direction === 'right') {
+    topCard.style.transform = 'translate(400px, 50px) rotate(30deg)';
+    topCard.style.opacity = 0;
+
+    // Trigger action after brief animation
+    setTimeout(() => {
+      if (currentItem) {
+        if (currentMarketType === 'jobs') {
+          openApplyModal(currentItem.id, currentItem.title, currentItem.budget);
+        } else {
+          quickOrderGig(currentItem.id);
+        }
+      }
+      tinderCurrentIndex++;
+      renderTinderSwipeDeck();
+    }, 250);
+  } else {
+    topCard.style.transform = 'translate(-400px, 50px) rotate(-30deg)';
+    topCard.style.opacity = 0;
+
+    setTimeout(() => {
+      tinderCurrentIndex++;
+      renderTinderSwipeDeck();
+    }, 250);
+  }
+}
+
+function viewCurrentSwipeCardDetails() {
+  const currentItem = marketplaceItemsData[tinderCurrentIndex];
+  if (!currentItem) return;
+
+  alert(`📋 ${currentItem.title}\n\nCategory: ${currentItem.category}\nBudget/Price: RM ${parseFloat(currentItem.budget || currentItem.price).toFixed(2)}\n\nDescription:\n${currentItem.description}`);
+}
+
+function openApplyModal(jobId, jobTitle, budget) {
+  document.getElementById('modal-job-id').value = jobId;
+  document.getElementById('modal-job-title').textContent = `Apply for: ${jobTitle}`;
+  document.getElementById('modal-job-budget').textContent = `RM ${parseFloat(budget).toFixed(2)}`;
+  document.getElementById('apply-bid').value = budget;
+  document.getElementById('apply-proposal').value = '';
+  openModal('apply-job-modal');
+}
+
+function quickOrderGig(gigId) {
+  if (confirm('Would you like to purchase this freelance gig service now using your wallet balance?')) {
+    fetch(`/api/gigs/${gigId}/order`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        showDashboardAlert(data.message, 'success');
+        fetchHeaderWalletBalance();
+      })
+      .catch(err => console.error(err));
   }
 }
 

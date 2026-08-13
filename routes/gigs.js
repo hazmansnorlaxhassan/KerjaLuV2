@@ -114,6 +114,7 @@ router.get('/proximity', authenticateToken, async (req, res) => {
 // 4. Order/Buy a gig (Any logged-in user can buy, except the seller themselves)
 router.post('/:id/order', authenticateToken, async (req, res) => {
   const gigId = req.params.id;
+  const buyerId = req.user.id;
 
   try {
     // Get gig details
@@ -125,19 +126,50 @@ router.post('/:id/order', authenticateToken, async (req, res) => {
     const gig = gigs[0];
 
     // Prevent ordering own gig
-    if (gig.jobseeker_id === req.user.id) {
+    if (gig.jobseeker_id === buyerId) {
       return res.status(400).json({ message: 'You cannot purchase your own freelance service.' });
     }
 
-    // Create order
+    const orderPrice = parseFloat(gig.price);
+
+    // Check buyer's balance
+    const [[buyer]] = await db.query('SELECT balance FROM users WHERE id = ?', [buyerId]);
+    const currentBalance = parseFloat(buyer.balance || 0);
+
+    if (currentBalance < orderPrice) {
+      return res.status(400).json({
+        message: `Insufficient wallet balance. Total required: RM ${orderPrice.toFixed(2)}, Available balance: RM ${currentBalance.toFixed(2)}. Please top up your wallet.`
+      });
+    }
+
+    // Deduct balance & record Escrow Hold
+    await db.query('UPDATE users SET balance = balance - ? WHERE id = ?', [orderPrice, buyerId]);
     await db.query(
-      'INSERT INTO orders (gig_id, buyer_id, seller_id, price, status) VALUES (?, ?, ?, ?, ?)',
-      [gigId, req.user.id, gig.jobseeker_id, gig.price, 'pending']
+      'INSERT INTO transactions (user_id, type, amount, reference_type, reference_id, description) VALUES (?, ?, ?, ?, ?, ?)',
+      [buyerId, 'escrow_hold', orderPrice, 'gig', gigId, `Escrow Hold for purchasing gig: "${gig.title}"`]
     );
 
-    res.status(201).json({ message: 'Order placed successfully!' });
+    // Create order
+    const [orderResult] = await db.query(
+      'INSERT INTO orders (gig_id, buyer_id, seller_id, price, status) VALUES (?, ?, ?, ?, ?)',
+      [gigId, buyerId, gig.jobseeker_id, orderPrice, 'pending']
+    );
+
+    // Send Notification to Seller
+    await db.query(
+      'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+      [
+        gig.jobseeker_id,
+        'order',
+        'New Gig Order Placed!',
+        `${req.user.username} purchased your gig "${gig.title}" for RM ${orderPrice.toFixed(2)}. Funds are held in Escrow.`,
+        'orders:sales'
+      ]
+    );
+
+    res.status(201).json({ message: 'Order placed successfully! Funds have been secured in Escrow.' });
   } catch (error) {
-    console.error(error);
+    console.error('Error placing gig order:', error);
     res.status(500).json({ message: 'Failed to place order.' });
   }
 });
@@ -191,12 +223,21 @@ router.post('/orders/:id/status', authenticateToken, async (req, res) => {
 
   try {
     // Get order details
-    const [orders] = await db.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+    const [orders] = await db.query('SELECT o.*, g.title AS gig_title FROM orders o JOIN gigs g ON o.gig_id = g.id WHERE o.id = ?', [orderId]);
     if (orders.length === 0) {
       return res.status(404).json({ message: 'Order not found.' });
     }
 
     const order = orders[0];
+    const oldStatus = order.status;
+
+    if (oldStatus === 'completed') {
+      return res.status(400).json({ message: 'Completed orders cannot change status.' });
+    }
+
+    if (oldStatus === 'cancelled') {
+      return res.status(400).json({ message: 'Cancelled orders cannot change status.' });
+    }
 
     // Status logic
     if (status === 'cancelled') {
@@ -207,10 +248,64 @@ router.post('/orders/:id/status', authenticateToken, async (req, res) => {
       if (req.user.id === order.buyer_id && order.status !== 'pending') {
         return res.status(400).json({ message: 'You can only cancel an order that is still pending.' });
       }
+
+      // Refund buyer balance
+      const refundAmount = parseFloat(order.price);
+      await db.query('UPDATE users SET balance = balance + ? WHERE id = ?', [refundAmount, order.buyer_id]);
+      await db.query(
+        'INSERT INTO transactions (user_id, type, amount, reference_type, reference_id, description) VALUES (?, ?, ?, ?, ?, ?)',
+        [order.buyer_id, 'refund', refundAmount, 'order', orderId, `Refund for cancelled order: "${order.gig_title}"`]
+      );
+
+      // Notify Buyer & Seller
+      await db.query(
+        'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+        [
+          order.buyer_id,
+          'order',
+          'Order Cancelled & Refunded',
+          `Order #${orderId} for "${order.gig_title}" was cancelled. RM ${refundAmount.toFixed(2)} has been refunded to your wallet.`,
+          'orders:purchases'
+        ]
+      );
     } else {
       // Only seller can change to in_progress or completed
       if (req.user.id !== order.seller_id) {
         return res.status(403).json({ message: 'Only the seller can update order progress.' });
+      }
+
+      if (status === 'completed') {
+        // Release funds to seller
+        const releaseAmount = parseFloat(order.price);
+        await db.query('UPDATE users SET balance = balance + ? WHERE id = ?', [releaseAmount, order.seller_id]);
+        await db.query(
+          'INSERT INTO transactions (user_id, type, amount, reference_type, reference_id, description) VALUES (?, ?, ?, ?, ?, ?)',
+          [order.seller_id, 'escrow_release', releaseAmount, 'order', orderId, `Earnings released for completed order: "${order.gig_title}"`]
+        );
+
+        // Notify Buyer to leave review
+        await db.query(
+          'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+          [
+            order.buyer_id,
+            'order',
+            'Order Delivered & Completed!',
+            `Order #${orderId} for "${order.gig_title}" has been completed! Please leave a review for the freelancer.`,
+            'orders:purchases'
+          ]
+        );
+      } else if (status === 'in_progress') {
+        // Notify Buyer
+        await db.query(
+          'INSERT INTO notifications (user_id, type, title, message, link) VALUES (?, ?, ?, ?, ?)',
+          [
+            order.buyer_id,
+            'order',
+            'Order In Progress',
+            `Seller started working on order #${orderId} ("${order.gig_title}").`,
+            'orders:purchases'
+          ]
+        );
       }
     }
 
@@ -218,7 +313,7 @@ router.post('/orders/:id/status', authenticateToken, async (req, res) => {
     await db.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
     res.json({ message: `Order status updated to ${status}.` });
   } catch (error) {
-    console.error(error);
+    console.error('Error updating order status:', error);
     res.status(500).json({ message: 'Failed to update order status.' });
   }
 });

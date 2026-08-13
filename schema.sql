@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   status ENUM('active', 'suspended') DEFAULT 'active',
   latitude DECIMAL(10, 8) NULL,
   longitude DECIMAL(11, 8) NULL,
+  balance DECIMAL(10, 2) NOT NULL DEFAULT 1000.00,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -68,6 +69,58 @@ CREATE TABLE IF NOT EXISTS orders (
   FOREIGN KEY (gig_id) REFERENCES gigs(id) ON DELETE CASCADE,
   FOREIGN KEY (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 6. Messages Table (Direct Messaging)
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  content TEXT NOT NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 7. Reviews Table (Ratings & Reviews for Completed Gigs/Orders)
+CREATE TABLE IF NOT EXISTS reviews (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NULL,
+  reviewer_id INT NOT NULL,
+  reviewee_id INT NOT NULL,
+  gig_id INT NULL,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewee_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 8. Notifications Table
+CREATE TABLE IF NOT EXISTS notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(150) NOT NULL,
+  message TEXT NOT NULL,
+  link VARCHAR(255) NULL,
+  is_read TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 9. Transactions Table (Wallet & Escrow)
+CREATE TABLE IF NOT EXISTS transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  type ENUM('deposit', 'escrow_hold', 'escrow_release', 'refund') NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  reference_type VARCHAR(50) NULL,
+  reference_id INT NULL,
+  description VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Seed Initial Users (Passwords are bcrypt hashed for 'password123')
