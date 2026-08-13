@@ -5,6 +5,14 @@ let currentTab = 'dashboard';
 // Categories mapping helper
 const categories = ['Web Development', 'Design', 'Writing', 'Marketing'];
 
+// Global Mobile Menu Toggle Handler
+window.toggleMobileMenu = function() {
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('menu-open');
+  }
+};
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth();
