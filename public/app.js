@@ -2256,7 +2256,7 @@ async function submitReview(e) {
   }
 }
 
-// Bind submit handlers
+// Bind submit and navigation handlers
 document.addEventListener('DOMContentLoaded', () => {
   const depositForm = document.getElementById('wallet-deposit-form');
   if (depositForm) depositForm.addEventListener('submit', submitWalletDeposit);
@@ -2266,6 +2266,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const reviewForm = document.getElementById('review-form');
   if (reviewForm) reviewForm.addEventListener('submit', submitReview);
+
+  // Mobile Sidebar Hamburger Toggle
+  const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+  if (sidebarToggleBtn) {
+    sidebarToggleBtn.addEventListener('click', () => {
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.classList.toggle('menu-open');
+    });
+  }
 });
 
 /* ========================================================================== */
