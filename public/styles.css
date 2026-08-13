@@ -1246,6 +1246,13 @@ table tbody tr:hover td {
 /* ========================================================================== */
 /* TINDER-STYLE SWIPE DECK ("GIGMATCH MODE")                                  */
 /* ========================================================================== */
+/* Mobile-Only Tinder Swipe Deck Rule */
+@media (min-width: 769px) {
+  .mobile-only-swipe-deck {
+    display: none !important;
+  }
+}
+
 .swipe-deck-container {
   display: flex;
   flex-direction: column;

@@ -193,7 +193,9 @@ async function switchTab(tabName) {
 async function loadJobseekerDashboard() {
   try {
     currentMarketType = 'jobs';
-    loadMarketplaceData();
+    if (window.innerWidth <= 768) {
+      loadMarketplaceData();
+    }
 
     // Load seeker stats (applications, purchases, sales)
     const appsRes = await fetch('/api/jobs/my-applications');
@@ -272,7 +274,9 @@ async function loadJobseekerDashboard() {
 async function loadEmployerDashboard() {
   try {
     currentMarketType = 'gigs';
-    loadMarketplaceData();
+    if (window.innerWidth <= 768) {
+      loadMarketplaceData();
+    }
 
     // Load employer stats (jobs, orders)
     const jobsRes = await fetch('/api/jobs/my-jobs');
@@ -2306,10 +2310,10 @@ let currentDeltaX = 0;
 let currentDeltaY = 0;
 
 async function initMarketplaceExplorer() {
-  if (window.innerWidth <= 992) {
+  if (window.innerWidth <= 768) {
     setMarketplaceViewMode('tinder');
   } else {
-    setMarketplaceViewMode(currentMarketViewMode || 'map');
+    setMarketplaceViewMode('map');
   }
   await loadMarketplaceData();
 }
