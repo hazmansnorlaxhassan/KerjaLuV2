@@ -18,7 +18,7 @@
       <div>
         <div class="sidebar-header-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
           <a href="/" class="logo" style="display: inline-flex;">KerjaLu <span>GIGS</span></a>
-          <button id="sidebar-toggle" class="burger-btn" aria-label="Toggle Menu">
+          <button id="sidebar-toggle" class="burger-btn" aria-label="Toggle Menu" onclick="toggleMobileMenu()">
             <span class="burger-line"></span>
             <span class="burger-line"></span>
             <span class="burger-line"></span>
@@ -91,6 +91,27 @@
       <!-- VIEW: JOBSEEKER DASHBOARD                      -->
       <!-- ============================================== -->
       <section id="view-jobseeker-dashboard" class="dashboard-view" style="display: none;">
+        <!-- Tinder Swipe Deck Section for Jobseekers -->
+        <div class="glass-panel" style="margin-bottom: 30px; padding: 25px 20px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700;">🔥 GigMatch: Swipe Open Jobs</h3>
+              <p style="margin: 3px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Swipe right to Apply with your bid, or swipe left to skip.</p>
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="switchTab('marketplace-explorer')">🗺️ Full Explorer</button>
+          </div>
+          <div class="swipe-deck-container">
+            <div id="seeker-swipe-card-stack" class="swipe-card-stack">
+              <!-- JS rendered -->
+            </div>
+            <div class="swipe-controls">
+              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" onclick="triggerCardSwipe('left')">❌</button>
+              <button type="button" class="swipe-btn swipe-btn-info" title="View Details" onclick="viewCurrentSwipeCardDetails()">ℹ️</button>
+              <button type="button" class="swipe-btn swipe-btn-like" title="Apply Bid" onclick="triggerCardSwipe('right')">💚</button>
+            </div>
+          </div>
+        </div>
+
         <div class="stats-grid">
           <div class="glass-panel stat-card">
             <span class="label">Total Earnings</span>
@@ -184,6 +205,27 @@
       <!-- VIEW: EMPLOYER DASHBOARD                       -->
       <!-- ============================================== -->
       <section id="view-employer-dashboard" class="dashboard-view" style="display: none;">
+        <!-- Tinder Swipe Deck Section for Employers -->
+        <div class="glass-panel" style="margin-bottom: 30px; padding: 25px 20px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700;">🔥 GigMatch: Swipe Freelance Gigs</h3>
+              <p style="margin: 3px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Swipe right to Order a Gig with your wallet balance, or swipe left to skip.</p>
+            </div>
+            <button class="btn btn-secondary btn-small" onclick="switchTab('marketplace-explorer')">🗺️ Full Explorer</button>
+          </div>
+          <div class="swipe-deck-container">
+            <div id="employer-swipe-card-stack" class="swipe-card-stack">
+              <!-- JS rendered -->
+            </div>
+            <div class="swipe-controls">
+              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" onclick="triggerCardSwipe('left')">❌</button>
+              <button type="button" class="swipe-btn swipe-btn-info" title="View Details" onclick="viewCurrentSwipeCardDetails()">ℹ️</button>
+              <button type="button" class="swipe-btn swipe-btn-like" title="Order Gig" onclick="triggerCardSwipe('right')">💚</button>
+            </div>
+          </div>
+        </div>
+
         <div class="stats-grid">
           <div class="glass-panel stat-card">
             <span class="label">Total Spending</span>

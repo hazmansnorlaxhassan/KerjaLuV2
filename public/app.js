@@ -183,6 +183,9 @@ async function switchTab(tabName) {
 // 4. Jobseeker Dashboard Loaders
 async function loadJobseekerDashboard() {
   try {
+    currentMarketType = 'jobs';
+    loadMarketplaceData();
+
     // Load seeker stats (applications, purchases, sales)
     const appsRes = await fetch('/api/jobs/my-applications');
     const apps = await appsRes.json();
@@ -259,6 +262,9 @@ async function loadJobseekerDashboard() {
 // 5. Employer Dashboard Loaders
 async function loadEmployerDashboard() {
   try {
+    currentMarketType = 'gigs';
+    loadMarketplaceData();
+
     // Load employer stats (jobs, orders)
     const jobsRes = await fetch('/api/jobs/my-jobs');
     const jobs = await jobsRes.json();
@@ -2407,75 +2413,82 @@ function renderMarketplaceListResults(items) {
 /* TINDER SWIPE DECK RENDER & GESTURES                                        */
 /* ========================================================================== */
 function renderTinderSwipeDeck() {
-  const stackContainer = document.getElementById('swipe-card-stack');
-  if (!stackContainer) return;
+  const containers = [
+    document.getElementById('seeker-swipe-card-stack'),
+    document.getElementById('employer-swipe-card-stack'),
+    document.getElementById('swipe-card-stack')
+  ].filter(Boolean);
+
+  if (containers.length === 0) return;
 
   const remainingItems = marketplaceItemsData.slice(tinderCurrentIndex);
 
-  if (remainingItems.length === 0) {
-    stackContainer.innerHTML = `
-      <div class="glass-panel text-center" style="margin:auto; padding:40px 20px; border-radius:24px;">
-        <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
-        <h3>That's all for now!</h3>
-        <p style="margin-top:5px; font-size:0.9rem;">You've swiped through all available ${currentMarketType}.</p>
-        <button class="btn btn-primary" style="margin-top:15px;" onclick="tinderCurrentIndex = 0; renderTinderSwipeDeck();">🔄 Start Over</button>
-      </div>
-    `;
-    return;
-  }
+  containers.forEach(stackContainer => {
+    if (remainingItems.length === 0) {
+      stackContainer.innerHTML = `
+        <div class="glass-panel text-center" style="margin:auto; padding:40px 20px; border-radius:24px;">
+          <div style="font-size:3rem; margin-bottom:10px;">🎉</div>
+          <h3>That's all for now!</h3>
+          <p style="margin-top:5px; font-size:0.9rem;">You've swiped through all available ${currentMarketType}.</p>
+          <button class="btn btn-primary" style="margin-top:15px;" onclick="tinderCurrentIndex = 0; renderTinderSwipeDeck();">🔄 Start Over</button>
+        </div>
+      `;
+      return;
+    }
 
-  // Render top 3 stacked cards
-  const cardsToRender = remainingItems.slice(0, 3);
-  stackContainer.innerHTML = cardsToRender.map((item, index) => {
-    const isTop = index === 0;
-    const title = item.title;
-    const author = item.employer_name || item.jobseeker_name || 'Verified User';
-    const amount = item.budget || item.price;
-    const category = item.category;
-    const desc = item.description;
+    // Render top 3 stacked cards
+    const cardsToRender = remainingItems.slice(0, 3);
+    stackContainer.innerHTML = cardsToRender.map((item, index) => {
+      const isTop = index === 0;
+      const title = item.title;
+      const author = item.employer_name || item.jobseeker_name || 'Verified User';
+      const amount = item.budget || item.price;
+      const category = item.category;
+      const desc = item.description;
 
-    return `
-      <div class="swipe-card" id="swipe-card-${tinderCurrentIndex + index}" data-item-id="${item.id}" data-author-id="${item.employer_id || item.jobseeker_id}">
-        <!-- Stamp overlays for top card -->
-        ${isTop ? `
-          <div class="swipe-stamp swipe-stamp-like" id="stamp-like">APPLY / ORDER</div>
-          <div class="swipe-stamp swipe-stamp-pass" id="stamp-pass">PASS</div>
-        ` : ''}
+      return `
+        <div class="swipe-card" id="swipe-card-${tinderCurrentIndex + index}" data-item-id="${item.id}" data-author-id="${item.employer_id || item.jobseeker_id}">
+          <!-- Stamp overlays for top card -->
+          ${isTop ? `
+            <div class="swipe-stamp swipe-stamp-like" id="stamp-like">APPLY / ORDER</div>
+            <div class="swipe-stamp swipe-stamp-pass" id="stamp-pass">PASS</div>
+          ` : ''}
 
-        <!-- Top Header Pill Badges -->
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <span class="badge" style="background:rgba(234, 179, 8, 0.15); color:var(--text-main); font-weight:600; padding:6px 12px; font-size:0.85rem;">
-              🏷️ ${escapeHtml(category)}
-            </span>
-            <span style="font-size:1.3rem; font-weight:800; color:var(--color-success);">
-              RM ${parseFloat(amount).toFixed(2)}
-            </span>
+          <!-- Top Header Pill Badges -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="badge" style="background:rgba(234, 179, 8, 0.15); color:var(--text-main); font-weight:600; padding:6px 12px; font-size:0.85rem;">
+                🏷️ ${escapeHtml(category)}
+              </span>
+              <span style="font-size:1.3rem; font-weight:800; color:var(--color-success);">
+                RM ${parseFloat(amount).toFixed(2)}
+              </span>
+            </div>
+
+            <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:6px; color:var(--text-main); line-height:1.3;">
+              ${escapeHtml(title)}
+            </h2>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+              👤 Posted by <strong>${escapeHtml(author)}</strong>
+            </p>
           </div>
 
-          <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:6px; color:var(--text-main); line-height:1.3;">
-            ${escapeHtml(title)}
-          </h2>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
-            👤 Posted by <strong>${escapeHtml(author)}</strong>
-          </p>
-        </div>
+          <!-- Center Description Snippet -->
+          <div style="background:var(--bg-primary); padding:14px; border-radius:16px; border:1px solid var(--border-color); margin-bottom:15px; flex:1; overflow:hidden;">
+            <p style="font-size:0.88rem; color:var(--text-main); line-height:1.5; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">
+              ${escapeHtml(desc)}
+            </p>
+          </div>
 
-        <!-- Center Description Snippet -->
-        <div style="background:var(--bg-primary); padding:14px; border-radius:16px; border:1px solid var(--border-color); margin-bottom:15px; flex:1; overflow:hidden;">
-          <p style="font-size:0.88rem; color:var(--text-main); line-height:1.5; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">
-            ${escapeHtml(desc)}
-          </p>
+          <!-- Card Footer -->
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:12px;">
+            <span>📍 Swipe left to Pass, right to Apply</span>
+            <span style="color:var(--color-primary); font-weight:600;">Swipe Right ➔</span>
+          </div>
         </div>
-
-        <!-- Card Footer -->
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:12px;">
-          <span>📍 Swipe left to Pass, right to Apply</span>
-          <span style="color:var(--color-primary); font-weight:600;">Swipe Right ➔</span>
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  });
 
   // Attach Gesture listeners to top card
   attachTopCardGestures();
