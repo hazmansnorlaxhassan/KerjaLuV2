@@ -56,33 +56,34 @@ async function checkAuth() {
 
 function renderSidebarMenu() {
   const menu = document.getElementById('sidebar-nav');
+  if (!menu) return;
   let html = '';
 
   if (currentUser.role === 'jobseeker') {
     html = `
-      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')">Dashboard Overview</a></li>
-      <li id="menu-marketplace-explorer"><a href="#" onclick="switchTab('marketplace-explorer')">Marketplace Explorer</a></li>
-      <li id="menu-my-applications"><a href="#" onclick="switchTab('my-applications')">My Applications</a></li>
-      <li id="menu-sales-orders"><a href="#" onclick="switchTab('sales-orders')">Orders Received (Sales)</a></li>
-      <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')">Bought Gigs (Purchases)</a></li>
-      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
-      <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
+      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a></li>
+      <li id="menu-marketplace-explorer"><a href="#" onclick="switchTab('marketplace-explorer')"><span class="nav-icon">🗺️</span><span class="nav-label">Explorer</span></a></li>
+      <li id="menu-my-applications"><a href="#" onclick="switchTab('my-applications')"><span class="nav-icon">📋</span><span class="nav-label">Applications</span></a></li>
+      <li id="menu-sales-orders"><a href="#" onclick="switchTab('sales-orders')"><span class="nav-icon">💰</span><span class="nav-label">Sales</span></a></li>
+      <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')"><span class="nav-icon">🛍️</span><span class="nav-label">Purchases</span></a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')"><span class="nav-icon">💬</span><span class="nav-label">Messages</span></a></li>
+      <li id="menu-profile"><a href="#" onclick="switchTab('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a></li>
     `;
   } else if (currentUser.role === 'employer') {
     html = `
-      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')">Dashboard Overview</a></li>
-      <li id="menu-marketplace-explorer"><a href="#" onclick="switchTab('marketplace-explorer')">Marketplace Explorer</a></li>
-      <li id="menu-employer-post-job"><a href="#" onclick="switchTab('employer-post-job')">Post a Job</a></li>
-      <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')">Purchases History</a></li>
-      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
-      <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
+      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></a></li>
+      <li id="menu-marketplace-explorer"><a href="#" onclick="switchTab('marketplace-explorer')"><span class="nav-icon">🗺️</span><span class="nav-label">Explorer</span></a></li>
+      <li id="menu-employer-post-job"><a href="#" onclick="switchTab('employer-post-job')"><span class="nav-icon">➕</span><span class="nav-label">Post Job</span></a></li>
+      <li id="menu-purchases"><a href="#" onclick="switchTab('purchases')"><span class="nav-icon">🛍️</span><span class="nav-label">Purchases</span></a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')"><span class="nav-icon">💬</span><span class="nav-label">Messages</span></a></li>
+      <li id="menu-profile"><a href="#" onclick="switchTab('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a></li>
     `;
   } else if (currentUser.role === 'admin') {
     html = `
-      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')">Admin Stats</a></li>
-      <li id="menu-admin-moderation"><a href="#" onclick="switchTab('admin-moderation')">Moderate Platform</a></li>
-      <li id="menu-messages"><a href="#" onclick="switchTab('messages')">💬 Direct Messages</a></li>
-      <li id="menu-profile"><a href="#" onclick="switchTab('profile')">My Profile</a></li>
+      <li id="menu-dashboard"><a href="#" onclick="switchTab('dashboard')"><span class="nav-icon">📊</span><span class="nav-label">Stats</span></a></li>
+      <li id="menu-admin-moderation"><a href="#" onclick="switchTab('admin-moderation')"><span class="nav-icon">🛡️</span><span class="nav-label">Moderate</span></a></li>
+      <li id="menu-messages"><a href="#" onclick="switchTab('messages')"><span class="nav-icon">💬</span><span class="nav-label">Messages</span></a></li>
+      <li id="menu-profile"><a href="#" onclick="switchTab('profile')"><span class="nav-icon">👤</span><span class="nav-label">Profile</span></a></li>
     `;
   }
 
