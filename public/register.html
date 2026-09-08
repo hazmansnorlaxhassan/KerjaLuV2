@@ -36,12 +36,10 @@
         <!-- Role Select Options -->
         <div class="role-selector">
           <div class="role-option active" id="option-jobseeker">
-            <span style="font-size: 1.5rem; display: block; margin-bottom: 8px;">💼</span>
             <strong>Jobseeker</strong>
             <p style="font-size: 0.75rem; margin-top: 4px;">Find part-time work & sell services</p>
           </div>
           <div class="role-option" id="option-employer">
-            <span style="font-size: 1.5rem; display: block; margin-bottom: 8px;">🏢</span>
             <strong>Employer</strong>
             <p style="font-size: 0.75rem; margin-top: 4px;">Post jobs & buy freelance gigs</p>
           </div>
@@ -58,6 +56,12 @@
         </div>
 
         <div class="form-group">
+          <label for="phone">WhatsApp Phone Number</label>
+          <input type="tel" id="phone" class="form-control" placeholder="+673 8XXXXXX" value="+673 ">
+          <small style="color: var(--text-muted); font-size: 0.78rem; display: block; margin-top: 3px;">Used for direct WhatsApp communication with clients and employers.</small>
+        </div>
+
+        <div class="form-group">
           <label for="password">Password</label>
           <input type="password" id="password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
         </div>
@@ -66,7 +70,7 @@
       </form>
 
       <div class="auth-footer">
-        <p>Already have an account? <a href="/login">Sign in here</a></p>
+        <p>Already have an account? <a href="/login">Sign in here</a> (or use <strong><a href="/login">Quick Demo Login</a></strong>)</p>
       </div>
     </div>
   </div>
@@ -98,6 +102,7 @@
 
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
       const password = document.getElementById('password').value;
       const role = roleInput.value;
 
@@ -107,7 +112,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ username, email, password, role })
+          body: JSON.stringify({ username, email, phone, password, role })
         });
 
         const data = await response.json();

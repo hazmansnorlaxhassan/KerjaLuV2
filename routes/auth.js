@@ -7,7 +7,7 @@ const { authenticateToken } = require('../auth-middleware');
 
 // Register User
 router.post('/register', async (req, res) => {
-  const { username, email, password, role, latitude, longitude } = req.body;
+  const { username, email, password, role, phone, latitude, longitude } = req.body;
 
   if (!username || !email || !password || !role) {
     return res.status(400).json({ message: 'All fields are required.' });
@@ -33,9 +33,10 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Insert user
+    const userPhone = phone || '+673 8123456';
     const [result] = await db.query(
-      'INSERT INTO users (username, email, password, role, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)',
-      [username, email, hashedPassword, role, latitude || null, longitude || null]
+      'INSERT INTO users (username, email, password, role, phone, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [username, email, hashedPassword, role, userPhone, latitude || null, longitude || null]
     );
 
     const userId = result.insertId;
@@ -120,6 +121,71 @@ router.post('/login', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Login failed. Server error.' });
+  }
+});
+
+// Quick Login for Jobseeker and Employer Demo Accounts
+router.post('/quick-login', async (req, res) => {
+  const { role } = req.body;
+
+  if (!role || (role !== 'jobseeker' && role !== 'employer')) {
+    return res.status(400).json({ message: 'Invalid role for quick login. Must be jobseeker or employer.' });
+  }
+
+  try {
+    let user = null;
+
+    if (role === 'jobseeker') {
+      // Prioritize primary seeded jobseeker (Jane or Bob), or any active jobseeker
+      const [users] = await db.query(
+        `SELECT * FROM users 
+         WHERE role = 'jobseeker' AND status = 'active'
+         ORDER BY (CASE WHEN username = 'jane_jobseeker' THEN 1 WHEN username = 'bob_jobseeker' THEN 2 ELSE 3 END), id ASC 
+         LIMIT 1`
+      );
+      if (users.length > 0) user = users[0];
+    } else if (role === 'employer') {
+      // Prioritize primary seeded employer (John), or any active employer
+      const [users] = await db.query(
+        `SELECT * FROM users 
+         WHERE role = 'employer' AND status = 'active'
+         ORDER BY (CASE WHEN username = 'john_employer' THEN 1 ELSE 2 END), id ASC 
+         LIMIT 1`
+      );
+      if (users.length > 0) user = users[0];
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: `No active ${role} demo account found.` });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, username: user.username, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'supersecretkey',
+      { expiresIn: '24h' }
+    );
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000
+    });
+
+    res.json({
+      message: `Quick login successful as ${user.username}!`,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Quick login error:', error);
+    res.status(500).json({ message: 'Quick login failed. Server error.' });
   }
 });
 
@@ -242,9 +308,9 @@ router.put('/profile/location', authenticateToken, async (req, res) => {
   }
 });
 
-// Update User Profile (Username, Email & Password)
+// Update User Profile (Username, Email, Phone & Password)
 router.put('/profile', authenticateToken, async (req, res) => {
-  const { username, email, currentPassword, newPassword } = req.body;
+  const { username, email, phone, currentPassword, newPassword } = req.body;
   const userId = req.user.id;
 
   if (!username || !email) {
@@ -292,19 +358,20 @@ router.put('/profile', authenticateToken, async (req, res) => {
     }
 
     // 4. Update database
+    const userPhone = phone || '+673 8123456';
     if (passwordHash) {
       await db.query(
-        'UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?',
-        [username, email, passwordHash, userId]
+        'UPDATE users SET username = ?, email = ?, phone = ?, password = ? WHERE id = ?',
+        [username, email, userPhone, passwordHash, userId]
       );
     } else {
       await db.query(
-        'UPDATE users SET username = ?, email = ? WHERE id = ?',
-        [username, email, userId]
+        'UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?',
+        [username, email, userPhone, userId]
       );
     }
 
-    res.json({ message: 'Profile updated successfully!' });
+    res.json({ message: 'Profile updated successfully!', phone: userPhone });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Failed to update profile.' });

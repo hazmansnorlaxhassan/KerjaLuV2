@@ -126,12 +126,12 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Seed Initial Users (Passwords are bcrypt hashed for 'password123')
 -- Hash: $2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue
 -- Note: 'password123'
--- Coordinates based around Kota Kinabalu, Sabah (KK Center, Alam Mesra, UMS, Likas)
+-- Coordinates based around Bandar Seri Begawan, Brunei (BSB Center, Gadong, Berakas, Kiulap)
 INSERT INTO users (id, username, email, password, role, status, latitude, longitude) VALUES
-(1, 'system_admin', 'admin@kerjalu.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'admin', 'active', 5.98040000, 116.07350000),
-(2, 'john_employer', 'john@employer.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'employer', 'active', 6.03360000, 116.12140000),
-(3, 'jane_jobseeker', 'jane@jobseeker.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'jobseeker', 'active', 6.03670000, 116.11850000),
-(4, 'bob_jobseeker', 'bob@jobseeker.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'jobseeker', 'active', 5.98970000, 116.09680000);
+(1, 'system_admin', 'admin@kerjalu.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'admin', 'active', 4.90310000, 114.93980000),
+(2, 'john_employer', 'john@employer.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'employer', 'active', 4.91000000, 114.94500000),
+(3, 'jane_jobseeker', 'jane@jobseeker.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'jobseeker', 'active', 4.91500000, 114.94200000),
+(4, 'bob_jobseeker', 'bob@jobseeker.com', '$2a$10$h6iDuW4LafCmbAcqGSSJMOX4fAlxbDCW8niOavfyw3KHF/vZEy0ue', 'jobseeker', 'active', 4.89000000, 114.93000000);
 
 -- Seed Sample Gigs (Freelance services offered by Jobseekers)
 INSERT INTO gigs (id, jobseeker_id, title, description, price, delivery_days, category) VALUES
@@ -141,8 +141,8 @@ INSERT INTO gigs (id, jobseeker_id, title, description, price, delivery_days, ca
 
 -- Seed Sample Jobs (Posted by Employers)
 INSERT INTO jobs (id, employer_id, title, description, budget, category, status, latitude, longitude) VALUES
-(1, 2, 'Build an Express MySQL Backend API', 'Need a developer to design and write Express API endpoints for a booking website. Must include authentication.', 300.00, 'Web Development', 'open', 6.03360000, 116.12140000),
-(2, 2, 'Logo Design for Tech Startup', 'Looking for a minimalist, modern logo design for a software business. Delivery format: SVG, PNG.', 75.00, 'Design', 'open', 6.03000000, 116.13000000);
+(1, 2, 'Build an Express MySQL Backend API', 'Need a developer to design and write Express API endpoints for a booking website. Must include authentication.', 300.00, 'Web Development', 'open', 4.91000000, 114.94500000),
+(2, 2, 'Logo Design for Tech Startup', 'Looking for a minimalist, modern logo design for a software business. Delivery format: SVG, PNG.', 75.00, 'Design', 'open', 4.90500000, 114.95000000);
 
 -- Seed Sample Job Applications
 INSERT INTO job_applications (id, job_id, jobseeker_id, proposal, bid_amount, status) VALUES

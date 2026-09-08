@@ -51,14 +51,14 @@ async function migrate() {
 
     // 3. Update seeded coordinates
     console.log('Updating seeded users coordinates...');
-    await db.query('UPDATE users SET latitude = 5.98040000, longitude = 116.07350000 WHERE id = 1');
-    await db.query('UPDATE users SET latitude = 6.03360000, longitude = 116.12140000 WHERE id = 2');
-    await db.query('UPDATE users SET latitude = 6.03670000, longitude = 116.11850000 WHERE id = 3');
-    await db.query('UPDATE users SET latitude = 5.98970000, longitude = 116.09680000 WHERE id = 4');
+    await db.query('UPDATE users SET latitude = 4.90310000, longitude = 114.93980000 WHERE id = 1');
+    await db.query('UPDATE users SET latitude = 4.91000000, longitude = 114.94500000 WHERE id = 2');
+    await db.query('UPDATE users SET latitude = 4.91500000, longitude = 114.94200000 WHERE id = 3');
+    await db.query('UPDATE users SET latitude = 4.89000000, longitude = 114.93000000 WHERE id = 4');
 
     console.log('Updating seeded jobs coordinates...');
-    await db.query('UPDATE jobs SET latitude = 6.03360000, longitude = 116.12140000 WHERE id = 1');
-    await db.query('UPDATE jobs SET latitude = 6.03000000, longitude = 116.13000000 WHERE id = 2');
+    await db.query('UPDATE jobs SET latitude = 4.91000000, longitude = 114.94500000 WHERE id = 1');
+    await db.query('UPDATE jobs SET latitude = 4.90500000, longitude = 114.95000000 WHERE id = 2');
 
     console.log('Migration successful!');
     process.exit(0);

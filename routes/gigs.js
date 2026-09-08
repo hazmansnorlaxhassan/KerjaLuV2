@@ -7,7 +7,7 @@ const { authenticateToken, requireRole } = require('../auth-middleware');
 router.get('/', authenticateToken, async (req, res) => {
   const { category, search } = req.query;
   let sql = `
-    SELECT g.*, u.username AS jobseeker_name 
+    SELECT g.*, u.username AS jobseeker_name, u.latitude, u.longitude 
     FROM gigs g 
     JOIN users u ON g.jobseeker_id = u.id
     WHERE u.status = 'active'
@@ -138,7 +138,7 @@ router.post('/:id/order', authenticateToken, async (req, res) => {
 
     if (currentBalance < orderPrice) {
       return res.status(400).json({
-        message: `Insufficient wallet balance. Total required: RM ${orderPrice.toFixed(2)}, Available balance: RM ${currentBalance.toFixed(2)}. Please top up your wallet.`
+        message: `Insufficient wallet balance. Total required: BND ${orderPrice.toFixed(2)}, Available balance: BND ${currentBalance.toFixed(2)}. Please top up your wallet.`
       });
     }
 
@@ -162,7 +162,7 @@ router.post('/:id/order', authenticateToken, async (req, res) => {
         gig.jobseeker_id,
         'order',
         'New Gig Order Placed!',
-        `${req.user.username} purchased your gig "${gig.title}" for RM ${orderPrice.toFixed(2)}. Funds are held in Escrow.`,
+        `${req.user.username} purchased your gig "${gig.title}" for BND ${orderPrice.toFixed(2)}. Funds are held in Escrow.`,
         'orders:sales'
       ]
     );
@@ -264,7 +264,7 @@ router.post('/orders/:id/status', authenticateToken, async (req, res) => {
           order.buyer_id,
           'order',
           'Order Cancelled & Refunded',
-          `Order #${orderId} for "${order.gig_title}" was cancelled. RM ${refundAmount.toFixed(2)} has been refunded to your wallet.`,
+          `Order #${orderId} for "${order.gig_title}" was cancelled. BND ${refundAmount.toFixed(2)} has been refunded to your wallet.`,
           'orders:purchases'
         ]
       );

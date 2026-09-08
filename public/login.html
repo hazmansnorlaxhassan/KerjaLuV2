@@ -29,6 +29,38 @@
 
       <div id="alert-box" class="alert-box"></div>
 
+      <!-- Quick Demo Login Section -->
+      <div class="quick-login-section">
+        <div class="quick-login-header">
+          <span class="quick-login-badge">⚡ Quick Demo Login</span>
+          <span class="quick-login-hint">1-click instant access</span>
+        </div>
+
+        <div class="quick-login-grid">
+          <button type="button" class="quick-btn quick-btn-jobseeker" id="quick-jobseeker-btn">
+            <div class="quick-btn-icon">💼</div>
+            <div class="quick-btn-info">
+              <span class="quick-btn-role">Jobseeker</span>
+              <span class="quick-btn-desc">Jane (Freelancer)</span>
+            </div>
+            <span class="quick-btn-arrow">→</span>
+          </button>
+
+          <button type="button" class="quick-btn quick-btn-employer" id="quick-employer-btn">
+            <div class="quick-btn-icon">🏢</div>
+            <div class="quick-btn-info">
+              <span class="quick-btn-role">Employer</span>
+              <span class="quick-btn-desc">John (Hiring)</span>
+            </div>
+            <span class="quick-btn-arrow">→</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-divider">
+        <span>or sign in with email</span>
+      </div>
+
       <form id="login-form">
         <div class="form-group">
           <label for="email">Email Address</label>
@@ -52,14 +84,81 @@
   <script>
     const form = document.getElementById('login-form');
     const alertBox = document.getElementById('alert-box');
+    const quickJobseekerBtn = document.getElementById('quick-jobseeker-btn');
+    const quickEmployerBtn = document.getElementById('quick-employer-btn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
 
+    // Quick Login Handler
+    async function executeQuickLogin(role, targetBtn) {
+      alertBox.className = 'alert-box';
+      alertBox.style.display = 'none';
+
+      // Visual loading state
+      quickJobseekerBtn.classList.add('loading');
+      quickEmployerBtn.classList.add('loading');
+      const originalText = targetBtn.querySelector('.quick-btn-desc').textContent;
+      targetBtn.querySelector('.quick-btn-desc').textContent = 'Connecting...';
+
+      // Populate form fields visually
+      if (role === 'jobseeker') {
+        emailInput.value = 'jane_new@jobseeker.com';
+        passwordInput.value = '••••••••';
+      } else {
+        emailInput.value = 'john@employer.com';
+        passwordInput.value = '••••••••';
+      }
+
+      try {
+        const response = await fetch('/api/auth/quick-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ role })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          targetBtn.querySelector('.quick-btn-desc').textContent = 'Redirecting...';
+          alertBox.textContent = `⚡ Success! Logged in as ${data.user.username} (${data.user.role}). Redirecting to dashboard...`;
+          alertBox.className = 'alert-box alert-box-success';
+          alertBox.style.display = 'block';
+
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 800);
+        } else {
+          alertBox.textContent = data.message || 'Quick login failed. Please try again.';
+          alertBox.className = 'alert-box alert-box-error';
+          alertBox.style.display = 'block';
+          quickJobseekerBtn.classList.remove('loading');
+          quickEmployerBtn.classList.remove('loading');
+          targetBtn.querySelector('.quick-btn-desc').textContent = originalText;
+        }
+      } catch (err) {
+        console.error(err);
+        alertBox.textContent = 'A network error occurred. Please try again.';
+        alertBox.className = 'alert-box alert-box-error';
+        alertBox.style.display = 'block';
+        quickJobseekerBtn.classList.remove('loading');
+        quickEmployerBtn.classList.remove('loading');
+        targetBtn.querySelector('.quick-btn-desc').textContent = originalText;
+      }
+    }
+
+    quickJobseekerBtn.addEventListener('click', () => executeQuickLogin('jobseeker', quickJobseekerBtn));
+    quickEmployerBtn.addEventListener('click', () => executeQuickLogin('employer', quickEmployerBtn));
+
+    // Standard Form Submit Handler
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       alertBox.className = 'alert-box';
       alertBox.style.display = 'none';
 
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+      const email = emailInput.value;
+      const password = passwordInput.value;
 
       try {
         const response = await fetch('/api/auth/login', {

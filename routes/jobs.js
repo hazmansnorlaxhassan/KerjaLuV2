@@ -190,7 +190,7 @@ router.get('/:id/applications', authenticateToken, requireRole('employer'), asyn
 
     // Get applications
     const [applications] = await db.query(
-      `SELECT ja.*, u.username AS applicant_name, u.email AS applicant_email 
+      `SELECT ja.*, u.username AS applicant_name, u.email AS applicant_email, COALESCE(u.phone, '+673 8123456') AS applicant_phone 
        FROM job_applications ja 
        JOIN users u ON ja.jobseeker_id = u.id 
        WHERE ja.job_id = ? 
@@ -247,7 +247,7 @@ router.post('/:id/apply', authenticateToken, requireRole('jobseeker'), async (re
         job.employer_id,
         'job',
         'New Job Proposal Received!',
-        `${req.user.username} applied for "${job.title}" with bid RM ${parseFloat(bid_amount).toFixed(2)}.`,
+        `${req.user.username} applied for "${job.title}" with bid BND ${parseFloat(bid_amount).toFixed(2)}.`,
         'my-jobs'
       ]
     );
@@ -335,7 +335,7 @@ router.post('/applications/:id/status', authenticateToken, requireRole('employer
 router.get('/my-applications', authenticateToken, requireRole('jobseeker'), async (req, res) => {
   try {
     const [applications] = await db.query(
-      `SELECT ja.*, j.title AS job_title, j.budget AS job_budget, u.username AS employer_name 
+      `SELECT ja.*, j.title AS job_title, j.budget AS job_budget, j.employer_id, u.username AS employer_name, COALESCE(u.phone, '+673 8123456') AS employer_phone 
        FROM job_applications ja 
        JOIN jobs j ON ja.job_id = j.id 
        JOIN users u ON j.employer_id = u.id 

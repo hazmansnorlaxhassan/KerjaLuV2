@@ -13,7 +13,7 @@ async function authenticateToken(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey');
     
     // Check if the user is suspended in real-time
-    const [users] = await db.query('SELECT id, username, email, role, status, latitude, longitude FROM users WHERE id = ?', [decoded.id]);
+    const [users] = await db.query('SELECT id, username, email, role, status, latitude, longitude, COALESCE(phone, \'+673 8123456\') AS phone FROM users WHERE id = ?', [decoded.id]);
     
     if (users.length === 0) {
       res.clearCookie('token');

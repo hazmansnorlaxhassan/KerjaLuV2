@@ -48,6 +48,24 @@ async function initializeDatabase() {
         }
       }
 
+      // Auto-migration: check if phone column exists in users (for WhatsApp communication)
+      try {
+        await pool.query('SELECT phone FROM users LIMIT 1');
+      } catch (colErr) {
+        if (colErr.code === 'ER_BAD_FIELD_ERROR') {
+          await pool.query("ALTER TABLE users ADD COLUMN phone VARCHAR(30) NULL DEFAULT '+673 8123456'");
+          console.log('Migration: Added phone column to users table for WhatsApp communication.');
+        }
+      }
+
+      // Seed/update realistic Brunei phone numbers for demo users if default or null
+      await pool.query(`
+        UPDATE users SET phone = '+673 8765432' WHERE username = 'john_employer' AND (phone IS NULL OR phone = '+673 8123456');
+        UPDATE users SET phone = '+673 8912345' WHERE username = 'jane_jobseeker' AND (phone IS NULL OR phone = '+673 8123456');
+        UPDATE users SET phone = '+673 8345678' WHERE username = 'bob_jobseeker' AND (phone IS NULL OR phone = '+673 8123456');
+        UPDATE users SET phone = '+673 8888888' WHERE username = 'system_admin' AND (phone IS NULL OR phone = '+673 8123456');
+      `);
+
       // Create new tables if they don't exist
       await pool.query(`
         CREATE TABLE IF NOT EXISTS messages (
@@ -55,12 +73,43 @@ async function initializeDatabase() {
           sender_id INT NOT NULL,
           receiver_id INT NOT NULL,
           content TEXT NOT NULL,
+          subject VARCHAR(150) NULL DEFAULT 'Direct Inquiry',
+          whatsapp_url VARCHAR(500) NULL,
+          channel VARCHAR(30) NOT NULL DEFAULT 'whatsapp',
+          status VARCHAR(30) NOT NULL DEFAULT 'logged',
           is_read TINYINT(1) DEFAULT 0,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
           FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
         );
+      `);
 
+      // Auto-migration: add WhatsApp communication columns to messages if missing
+      try {
+        await pool.query('SELECT subject, whatsapp_url, channel, status FROM messages LIMIT 1');
+      } catch (msgErr) {
+        if (msgErr.code === 'ER_BAD_FIELD_ERROR') {
+          try { await pool.query("ALTER TABLE messages ADD COLUMN subject VARCHAR(150) NULL DEFAULT 'Direct Inquiry'"); } catch(e){}
+          try { await pool.query("ALTER TABLE messages ADD COLUMN whatsapp_url VARCHAR(500) NULL"); } catch(e){}
+          try { await pool.query("ALTER TABLE messages ADD COLUMN channel VARCHAR(30) NOT NULL DEFAULT 'whatsapp'"); } catch(e){}
+          try { await pool.query("ALTER TABLE messages ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'logged'"); } catch(e){}
+          console.log('Migration: Added WhatsApp communication columns to messages table.');
+        }
+      }
+
+      // Seed initial sample communication records if empty
+      const [msgCount] = await pool.query('SELECT COUNT(*) AS count FROM messages');
+      if (msgCount[0].count === 0) {
+        await pool.query(`
+          INSERT INTO messages (sender_id, receiver_id, content, subject, channel, whatsapp_url, status, created_at) VALUES
+          (2, 3, 'Hi Jane, I saw your Web Development gig on KerjaLu and would like to hire you for our API landing page project. Can we discuss your availability on WhatsApp?', 'Web Development Gig Inquiry', 'whatsapp', 'https://wa.me/6738912345?text=Hi%20Jane%2C%20I%20saw%20your%20Web%20Development%20gig%20on%20KerjaLu', 'logged', DATE_SUB(NOW(), INTERVAL 2 HOUR)),
+          (3, 2, 'Hi John! Yes, I am available to start on your project immediately. I have delivered similar Express APIs and responsive designs.', 'Re: Web Development Gig Inquiry', 'whatsapp', 'https://wa.me/6738765432?text=Hi%20John!%20Yes%2C%20I%20am%20available%20to%20start%20on%20your%20project', 'logged', DATE_SUB(NOW(), INTERVAL 1 HOUR)),
+          (2, 4, 'Hello Bob, regarding your proposal for the Logo Design gig, could you provide samples of vector SVG logos you previously designed?', 'Logo Design Application Discussion', 'whatsapp', 'https://wa.me/6738345678?text=Hello%20Bob%2C%20regarding%20your%20proposal%20for%20the%20Logo%20Design', 'logged', DATE_SUB(NOW(), INTERVAL 30 MINUTE));
+        `);
+        console.log('Seeded sample WhatsApp communication records.');
+      }
+
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS reviews (
           id INT AUTO_INCREMENT PRIMARY KEY,
           order_id INT NULL,

@@ -43,7 +43,7 @@ router.post('/deposit', async (req, res) => {
     // Record transaction
     await db.query(
       'INSERT INTO transactions (user_id, type, amount, description) VALUES (?, ?, ?, ?)',
-      [userId, 'deposit', depositAmount, `Deposited RM ${depositAmount.toFixed(2)} via Mock Gateway`]
+      [userId, 'deposit', depositAmount, `Deposited BND ${depositAmount.toFixed(2)} via Mock Gateway`]
     );
 
     // Notify user
@@ -53,7 +53,7 @@ router.post('/deposit', async (req, res) => {
         userId,
         'wallet',
         'Deposit Successful!',
-        `Your wallet was credited with RM ${depositAmount.toFixed(2)}.`,
+        `Your wallet was credited with BND ${depositAmount.toFixed(2)}.`,
         'wallet'
       ]
     );
@@ -61,7 +61,7 @@ router.post('/deposit', async (req, res) => {
     const [[updatedUser]] = await db.query('SELECT balance FROM users WHERE id = ?', [userId]);
 
     res.json({
-      message: `Successfully deposited RM ${depositAmount.toFixed(2)}!`,
+      message: `Successfully deposited BND ${depositAmount.toFixed(2)}!`,
       newBalance: parseFloat(updatedUser.balance).toFixed(2)
     });
   } catch (error) {

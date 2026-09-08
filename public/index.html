@@ -29,6 +29,15 @@
         <a href="/register" class="btn btn-primary">Join as Jobseeker</a>
         <a href="/register" class="btn btn-secondary">Hire Freelancers</a>
       </div>
+      <div class="hero-quick-login" id="hero-quick-login" style="margin-top: 24px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">⚡ Quick Demo Login:</span>
+        <button type="button" class="btn btn-small btn-secondary" onclick="quickLogin('jobseeker')" style="border-radius: 50px; padding: 6px 14px; background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.25); color: #2563eb; font-weight: 600; cursor: pointer;">
+          💼 Jobseeker Demo
+        </button>
+        <button type="button" class="btn btn-small btn-secondary" onclick="quickLogin('employer')" style="border-radius: 50px; padding: 6px 14px; background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.3); color: #b45309; font-weight: 600; cursor: pointer;">
+          🏢 Employer Demo
+        </button>
+      </div>
     </div>
   </section>
 
@@ -38,19 +47,16 @@
     </h2>
     <div class="features-grid">
       <div class="glass-panel feature-card">
-        <div class="icon">💼</div>
         <h3>Post & Apply for Gigs</h3>
         <p>Employers post detailed job requests with set budgets. Jobseekers submit custom proposals with their bid amounts to win the project.</p>
       </div>
 
       <div class="glass-panel feature-card">
-        <div class="icon">🚀</div>
         <h3>Offer Freelance Services</h3>
         <p>Jobseekers create and advertise their specific services (Gigs) with custom delivery timelines, allowing employers to purchase them instantly.</p>
       </div>
 
       <div class="glass-panel feature-card">
-        <div class="icon">🛡️</div>
         <h3>Safe & Managed Ecosystem</h3>
         <p>Our admin panel monitors activities, suspensions, and content moderation to ensure a highly professional and secure environment.</p>
       </div>
@@ -79,6 +85,8 @@
             document.getElementById('hero-cta-buttons').innerHTML = `
               <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
             `;
+            const heroQuick = document.getElementById('hero-quick-login');
+            if (heroQuick) heroQuick.style.display = 'none';
 
             document.getElementById('logout-btn').addEventListener('click', async (e) => {
               e.preventDefault();
@@ -93,6 +101,27 @@
         console.log("No active session.", err);
       }
     }
+
+    async function quickLogin(role) {
+      try {
+        const response = await fetch('/api/auth/quick-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ role })
+        });
+        if (response.ok) {
+          window.location.href = '/dashboard';
+        } else {
+          window.location.href = '/login';
+        }
+      } catch (err) {
+        console.error('Quick login error:', err);
+        window.location.href = '/login';
+      }
+    }
+
     checkSession();
   </script>
 </body>
