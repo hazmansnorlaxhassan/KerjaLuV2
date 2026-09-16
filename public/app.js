@@ -109,7 +109,31 @@ function renderSidebarMenu() {
   }
 
   menu.innerHTML = html;
+  ensureMobileBottomNav();
 }
+
+function ensureMobileBottomNav() {
+  const nav = document.getElementById('sidebar-content');
+  if (!nav) return;
+  if (window.innerWidth <= 768) {
+    if (nav.parentElement !== document.body) {
+      document.body.appendChild(nav);
+    }
+  } else {
+    const topGroup = document.querySelector('.sidebar-top-group');
+    if (topGroup && nav.parentElement !== topGroup) {
+      const desktopActions = document.querySelector('.sidebar-desktop-actions');
+      if (desktopActions) {
+        topGroup.insertBefore(nav, desktopActions);
+      } else {
+        topGroup.appendChild(nav);
+      }
+    }
+  }
+}
+
+window.addEventListener('resize', ensureMobileBottomNav);
+window.addEventListener('DOMContentLoaded', ensureMobileBottomNav);
 
 // 3. Tab Switching Router
 async function switchTab(tabName) {
@@ -2248,7 +2272,10 @@ async function fetchNotifications() {
   }
 }
 
-function toggleNotifDropdown(btn) {
+function toggleNotifDropdown(btn, event) {
+  if (event) {
+    event.stopPropagation();
+  }
   let targetPanel = null;
   if (btn) {
     const widget = btn.closest('.notif-widget-container');
@@ -2264,13 +2291,18 @@ function toggleNotifDropdown(btn) {
     const isVisible = targetPanel.style.display === 'block';
     // Close all panels first
     document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel').forEach(p => p.style.display = 'none');
-    targetPanel.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) {
+      targetPanel.style.display = 'block';
+      fetchNotifications();
+    } else {
+      targetPanel.style.display = 'none';
+    }
   }
 }
 
 // Global click outside listener to dismiss notification dropdowns
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.notif-widget-container, .notif-bell-btn, #notif-bell-btn')) {
+  if (!e.target.closest('.notif-widget-container, .notif-bell-btn, #notif-bell-btn, .notif-dropdown-panel')) {
     document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel').forEach(p => p.style.display = 'none');
   }
 });

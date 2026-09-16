@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Dashboard - KerjaLu</title>
-  <link rel="stylesheet" href="/styles.css?v=3.6">
+  <link rel="stylesheet" href="/styles.css?v=4.0">
   <script src="/theme.js?v=3.0"></script>
   <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -32,7 +32,7 @@
           <div class="mobile-header-actions" style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
             <!-- Mobile Notification Bell Widget -->
             <div class="notif-widget-container" style="position: relative;">
-              <button class="notif-bell-btn" onclick="toggleNotifDropdown(this)" aria-label="Notifications" title="Notifications">
+              <button class="notif-bell-btn" onclick="toggleNotifDropdown(this, event)" aria-label="Notifications" title="Notifications">
                 <svg class="notif-bell-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -73,7 +73,7 @@
         <div class="sidebar-desktop-actions" style="align-items: center; justify-content: flex-end; flex: 1 1 0%; gap: 12px;">
           <!-- Desktop Notification Bell Widget -->
           <div class="notif-widget-container" style="position: relative;">
-            <button class="notif-bell-btn" onclick="toggleNotifDropdown(this)" aria-label="Notifications" title="Notifications">
+            <button class="notif-bell-btn" onclick="toggleNotifDropdown(this, event)" aria-label="Notifications" title="Notifications">
               <svg class="notif-bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -139,13 +139,6 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-              <button type="button" class="swipe-btn swipe-btn-info" title="View Details" aria-label="Details" onclick="viewCurrentSwipeCardDetails()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
               <button type="button" class="swipe-btn swipe-btn-like" title="Apply Bid" aria-label="Apply Bid" onclick="triggerCardSwipe('right', this)">
@@ -268,13 +261,6 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-              <button type="button" class="swipe-btn swipe-btn-info" title="View Details" aria-label="Details" onclick="viewCurrentSwipeCardDetails()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
               <button type="button" class="swipe-btn swipe-btn-like" title="Order Gig" aria-label="Order Gig" onclick="triggerCardSwipe('right', this)">
@@ -516,13 +502,6 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-              <button type="button" class="swipe-btn swipe-btn-info" title="View Full Details" aria-label="View Details" onclick="viewCurrentSwipeCardDetails()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
               <button type="button" class="swipe-btn swipe-btn-like" title="Apply / Order (Swipe Right)" aria-label="Apply or Order" onclick="triggerCardSwipe('right', this)">
@@ -1301,6 +1280,6 @@
   </div>
 
   <!-- Include App Script -->
-  <script src="/app.js?v=3.5"></script>
+  <script src="/app.js?v=3.9"></script>
 </body>
 </html>
