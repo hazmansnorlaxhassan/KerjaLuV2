@@ -30,11 +30,14 @@ async function checkAuth() {
     const data = await res.json();
     currentUser = data.user;
     
-    // Set Sidebar User Details
-    document.getElementById('sidebar-username').textContent = currentUser.username;
+    // Set Sidebar User Details (if present)
+    const sidebarUserEl = document.getElementById('sidebar-username');
+    if (sidebarUserEl) sidebarUserEl.textContent = currentUser.username;
     const roleBadge = document.getElementById('sidebar-role');
-    roleBadge.textContent = currentUser.role;
-    roleBadge.className = `badge role-badge badge-${currentUser.role}`;
+    if (roleBadge) {
+      roleBadge.textContent = currentUser.role;
+      roleBadge.className = `badge role-badge badge-${currentUser.role}`;
+    }
 
     // Render Side Menu options based on role
     renderSidebarMenu();
@@ -699,7 +702,26 @@ function setupEventListeners() {
       e.preventDefault();
       const jobId = document.getElementById('modal-job-id').value;
       const bid_amount = parseFloat(document.getElementById('apply-bid').value);
-      const proposal = document.getElementById('apply-proposal').value;
+      const proposal = document.getElementById('apply-proposal').value.trim();
+
+      if (!jobId) {
+        showDashboardAlert('Invalid job selected.', 'error');
+        return;
+      }
+      if (isNaN(bid_amount) || bid_amount <= 0) {
+        showDashboardAlert('Please enter a valid bid amount (greater than 0).', 'warning');
+        return;
+      }
+      if (!proposal) {
+        showDashboardAlert('Please enter your proposal pitch.', 'warning');
+        return;
+      }
+
+      const submitBtn = applyJobForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting Proposal...';
+      }
 
       try {
         const res = await fetch(`/api/jobs/${jobId}/apply`, {
@@ -712,27 +734,45 @@ function setupEventListeners() {
           showDashboardAlert('Your application and bid proposal have been sent!', 'success');
           closeModal('apply-job-modal');
           applyJobForm.reset();
-          switchTab('my-applications');
+          await switchTab('my-applications');
         } else {
-          alert(data.message || 'Could not apply.');
+          showDashboardAlert(data.message || 'Could not apply for this job.', 'error');
         }
       } catch (err) {
         console.error(err);
+        showDashboardAlert('Network error occurred while applying.', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Proposal';
+        }
       }
     });
   }
 }
 
 // 14. Modals and Actions Hooks
-function openApplyModal(jobId, jobTitle, budget) {
-  document.getElementById('modal-job-id').value = jobId;
-  document.getElementById('modal-job-title').textContent = `Apply for: ${jobTitle}`;
-  document.getElementById('modal-job-budget').textContent = `BND ${parseFloat(budget).toFixed(2)}`;
-  document.getElementById('apply-bid').value = budget;
-  
-  const modal = document.getElementById('apply-job-modal');
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (!modal) return;
   modal.style.display = 'flex';
   setTimeout(() => modal.classList.add('active'), 10);
+}
+
+function openApplyModal(jobId, jobTitle, budget) {
+  const idInput = document.getElementById('modal-job-id');
+  const titleEl = document.getElementById('modal-job-title');
+  const budgetEl = document.getElementById('modal-job-budget');
+  const bidInput = document.getElementById('apply-bid');
+  const proposalInput = document.getElementById('apply-proposal');
+
+  if (idInput) idInput.value = jobId;
+  if (titleEl) titleEl.textContent = `Apply for: ${jobTitle}`;
+  if (budgetEl) budgetEl.textContent = `BND ${parseFloat(budget || 0).toFixed(2)}`;
+  if (bidInput) bidInput.value = (budget !== undefined && budget !== null) ? budget : '';
+  if (proposalInput) proposalInput.value = '';
+  
+  openModal('apply-job-modal');
 }
 
 // Employer opens applicants details
@@ -741,9 +781,7 @@ async function openApplicantsModal(jobId, jobTitle) {
   const listContainer = document.getElementById('modal-applicants-list');
   listContainer.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Fetching applicants...</td></tr>`;
 
-  const modal = document.getElementById('view-applicants-modal');
-  modal.style.display = 'flex';
-  setTimeout(() => modal.classList.add('active'), 10);
+  openModal('view-applicants-modal');
 
   try {
     const res = await fetch(`/api/jobs/${jobId}/applications`);
@@ -986,6 +1024,7 @@ let currentMarketViewMode = 'map'; // 'map' or 'tinder'
 let marketplaceItemsData = [];
 let tinderCurrentIndex = 0;
 let isDraggingCard = false;
+let activeDraggedCard = null;
 let startTouchX = 0;
 let startTouchY = 0;
 let currentDeltaX = 0;
@@ -1750,7 +1789,8 @@ async function handleProfileUpdateSubmit(e) {
       currentUser.phone = phone;
       
       // Update UI displays in real-time
-      document.getElementById('sidebar-username').textContent = username;
+      const sidebarUserEl = document.getElementById('sidebar-username');
+      if (sidebarUserEl) sidebarUserEl.textContent = username;
       document.getElementById('profile-display-username').textContent = username;
       document.getElementById('profile-avatar-char').textContent = username.charAt(0).toUpperCase();
 
@@ -2179,41 +2219,61 @@ async function fetchNotifications() {
     if (!res.ok) return;
     const data = await res.json();
 
-    const badge = document.getElementById('notif-badge-count');
-    if (badge) {
+    const badges = document.querySelectorAll('.notif-badge-count, #notif-badge-count');
+    badges.forEach(badge => {
       if (data.unreadCount > 0) {
         badge.textContent = data.unreadCount;
         badge.style.display = 'inline-block';
       } else {
         badge.style.display = 'none';
       }
-    }
+    });
 
-    const container = document.getElementById('notif-list-container');
-    if (container) {
-      if (!data.notifications || data.notifications.length === 0) {
-        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No notifications yet.</div>';
-      } else {
-        container.innerHTML = data.notifications.map(n => `
+    const containers = document.querySelectorAll('.notif-list-container, #notif-list-container');
+    const notifHtml = (!data.notifications || data.notifications.length === 0)
+      ? '<div style="padding:20px; text-align:center; color:var(--text-muted); font-size:0.85rem;">No notifications yet.</div>'
+      : data.notifications.map(n => `
           <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="handleNotifClick(${n.id}, '${n.link || ''}')">
-            <div style="font-weight: 600; margin-bottom: 2px;">${n.title}</div>
-            <div style="color: var(--text-muted);">${n.message}</div>
+            <div style="font-weight: 600; margin-bottom: 2px;">${escapeHtml(n.title)}</div>
+            <div style="color: var(--text-muted);">${escapeHtml(n.message)}</div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">${new Date(n.created_at).toLocaleString()}</div>
           </div>
         `).join('');
-      }
-    }
+
+    containers.forEach(container => {
+      container.innerHTML = notifHtml;
+    });
   } catch (err) {
     console.error(err);
   }
 }
 
-function toggleNotifDropdown() {
-  const panel = document.getElementById('notif-dropdown-panel');
-  if (panel) {
-    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+function toggleNotifDropdown(btn) {
+  let targetPanel = null;
+  if (btn) {
+    const widget = btn.closest('.notif-widget-container');
+    if (widget) {
+      targetPanel = widget.querySelector('.notif-dropdown-panel, #notif-dropdown-panel');
+    }
+  }
+  if (!targetPanel) {
+    const panels = Array.from(document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel'));
+    targetPanel = panels.find(p => p.offsetParent !== null) || panels[0];
+  }
+  if (targetPanel) {
+    const isVisible = targetPanel.style.display === 'block';
+    // Close all panels first
+    document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel').forEach(p => p.style.display = 'none');
+    targetPanel.style.display = isVisible ? 'none' : 'block';
   }
 }
+
+// Global click outside listener to dismiss notification dropdowns
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.notif-widget-container, .notif-bell-btn, #notif-bell-btn')) {
+    document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel').forEach(p => p.style.display = 'none');
+  }
+});
 
 async function markAllNotificationsRead() {
   try {
@@ -2228,8 +2288,7 @@ async function handleNotifClick(notifId, link) {
   try {
     await fetch(`/api/notifications/${notifId}/read`, { method: 'PUT' });
     fetchNotifications();
-    const panel = document.getElementById('notif-dropdown-panel');
-    if (panel) panel.style.display = 'none';
+    document.querySelectorAll('.notif-dropdown-panel, #notif-dropdown-panel').forEach(p => p.style.display = 'none');
 
     if (link) {
       if (link.startsWith('messages:')) {
@@ -2326,14 +2385,20 @@ function filterCommunicationRecords() {
 function renderCommunicationRecords(records) {
   const tbody = document.getElementById('comm-records-tbody');
   const emptyState = document.getElementById('comm-records-empty');
+  const table = tbody ? tbody.closest('table') : null;
+  const tableWrapper = document.querySelector('.comm-records-table-wrapper') || (table ? table.parentElement : null);
   if (!tbody) return;
 
   if (!records || records.length === 0) {
     tbody.innerHTML = '';
+    if (table) table.style.display = 'none';
+    if (tableWrapper) tableWrapper.style.display = 'none';
     if (emptyState) emptyState.style.display = 'block';
     return;
   }
 
+  if (table) table.style.display = '';
+  if (tableWrapper) tableWrapper.style.display = '';
   if (emptyState) emptyState.style.display = 'none';
 
   tbody.innerHTML = records.map(r => {
@@ -2541,9 +2606,24 @@ async function handleSendWhatsAppMessage(e) {
   }
 }
 
-function viewCommunicationRecord(recordId) {
-  const record = allCommunicationRecords.find(r => r.id == recordId);
-  if (!record) return;
+async function viewCommunicationRecord(recordId) {
+  let record = allCommunicationRecords.find(r => r.id == recordId);
+  if (!record) {
+    try {
+      const res = await fetch('/api/messages/records');
+      if (res.ok) {
+        allCommunicationRecords = await res.json();
+        record = allCommunicationRecords.find(r => r.id == recordId);
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  }
+
+  if (!record) {
+    showDashboardAlert('Communication record details could not be found.', 'error');
+    return;
+  }
 
   const dateStr = new Date(record.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
   const isOut = record.direction === 'outgoing';
@@ -2696,6 +2776,8 @@ function renderTinderSwipeDeck() {
 
     // Render top 3 stacked cards
     const cardsToRender = remainingItems.slice(0, 3);
+    const rightStampText = (currentMarketType === 'jobs') ? 'APPLY BID' : 'ORDER GIG';
+
     stackContainer.innerHTML = cardsToRender.map((item, index) => {
       const isTop = index === 0;
       const title = item.title;
@@ -2708,8 +2790,8 @@ function renderTinderSwipeDeck() {
         <div class="swipe-card" id="swipe-card-${tinderCurrentIndex + index}" data-item-id="${item.id}" data-author-id="${item.employer_id || item.jobseeker_id}">
           <!-- Stamp overlays for top card -->
           ${isTop ? `
-            <div class="swipe-stamp swipe-stamp-like" id="stamp-like">APPLY / ORDER</div>
-            <div class="swipe-stamp swipe-stamp-pass" id="stamp-pass">PASS</div>
+            <div class="swipe-stamp swipe-stamp-like">${rightStampText}</div>
+            <div class="swipe-stamp swipe-stamp-pass">PASS</div>
           ` : ''}
 
           <!-- Top Header Pill Badges -->
@@ -2748,104 +2830,185 @@ function renderTinderSwipeDeck() {
     }).join('');
   });
 
-  // Attach Gesture listeners to top card
-  attachTopCardGestures();
+  // Attach gesture listeners to the top card of all rendered stacks
+  attachAllTopCardGestures();
 }
 
-function attachTopCardGestures() {
-  const topCard = document.querySelector('.swipe-card:nth-child(1)');
-  if (!topCard) return;
+function attachAllTopCardGestures() {
+  const containers = [
+    document.getElementById('seeker-swipe-card-stack'),
+    document.getElementById('employer-swipe-card-stack'),
+    document.getElementById('swipe-card-stack')
+  ].filter(Boolean);
 
-  // Touch Events
-  topCard.addEventListener('touchstart', onDragStart, { passive: true });
-  topCard.addEventListener('touchmove', onDragMove, { passive: false });
-  topCard.addEventListener('touchend', onDragEnd);
+  containers.forEach(container => {
+    const topCard = container.querySelector('.swipe-card:first-child');
+    if (!topCard) return;
 
-  // Mouse Events
-  topCard.addEventListener('mousedown', onDragStart);
-  window.addEventListener('mousemove', onDragMove);
-  window.addEventListener('mouseup', onDragEnd);
+    // Pointer Events (Unified modern pointer drag support)
+    if (window.PointerEvent) {
+      topCard.onpointerdown = onDragStart;
+      topCard.onpointermove = onDragMove;
+      topCard.onpointerup = onDragEnd;
+      topCard.onpointercancel = onDragEnd;
+    } else {
+      // Touch & Mouse fallbacks for older devices
+      topCard.ontouchstart = onDragStart;
+      topCard.ontouchmove = onDragMove;
+      topCard.ontouchend = onDragEnd;
+      topCard.ontouchcancel = onDragEnd;
+      topCard.onmousedown = onDragStart;
+    }
+  });
 }
 
 function onDragStart(e) {
+  // Ignore clicks on buttons/links inside card
+  if (e.target && e.target.closest && e.target.closest('button, a, input, select')) {
+    return;
+  }
+
   isDraggingCard = true;
+  activeDraggedCard = e.currentTarget;
+
+  if (e.pointerId !== undefined && activeDraggedCard.setPointerCapture) {
+    try {
+      activeDraggedCard.setPointerCapture(e.pointerId);
+    } catch (err) {}
+  }
+
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
   startTouchX = clientX;
   startTouchY = clientY;
+  currentDeltaX = 0;
+  currentDeltaY = 0;
 
-  const topCard = document.querySelector('.swipe-card:nth-child(1)');
-  if (topCard) topCard.style.transition = 'none';
+  activeDraggedCard.classList.add('dragging');
+  activeDraggedCard.style.transition = 'none';
 }
 
 function onDragMove(e) {
-  if (!isDraggingCard) return;
+  if (!isDraggingCard || !activeDraggedCard) return;
+
   const clientX = e.touches ? e.touches[0].clientX : e.clientX;
   const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
   currentDeltaX = clientX - startTouchX;
   currentDeltaY = clientY - startTouchY;
-  const rotateDeg = currentDeltaX * 0.08;
 
-  const topCard = document.querySelector('.swipe-card:nth-child(1)');
-  if (topCard) {
-    topCard.style.transform = `translate(${currentDeltaX}px, ${currentDeltaY}px) rotate(${rotateDeg}deg)`;
-  }
-
-  // Update Stamp Opacity
-  const stampLike = document.getElementById('stamp-like');
-  const stampPass = document.getElementById('stamp-pass');
-  if (stampLike && stampPass) {
-    if (currentDeltaX > 20) {
-      stampLike.style.opacity = Math.min(currentDeltaX / 100, 1);
-      stampPass.style.opacity = 0;
-    } else if (currentDeltaX < -20) {
-      stampPass.style.opacity = Math.min(Math.abs(currentDeltaX) / 100, 1);
-      stampLike.style.opacity = 0;
-    } else {
-      stampLike.style.opacity = 0;
-      stampPass.style.opacity = 0;
-    }
-  }
-
-  if (e.touches && Math.abs(currentDeltaX) > 15) {
+  // Prevent default scroll when gesture is primarily horizontal
+  if (e.cancelable && (Math.abs(currentDeltaX) > 8 || Math.abs(currentDeltaY) > 8)) {
     e.preventDefault();
+  }
+
+  const rotateDeg = currentDeltaX * 0.08;
+  activeDraggedCard.style.transform = `translate(${currentDeltaX}px, ${currentDeltaY}px) rotate(${rotateDeg}deg)`;
+
+  // Update Stamps Opacity
+  const stampLike = activeDraggedCard.querySelector('.swipe-stamp-like');
+  const stampPass = activeDraggedCard.querySelector('.swipe-stamp-pass');
+
+  if (stampLike && stampPass) {
+    if (currentDeltaX > 15) {
+      stampLike.style.opacity = Math.min((currentDeltaX - 15) / 75, 1);
+      stampPass.style.opacity = '0';
+    } else if (currentDeltaX < -15) {
+      stampPass.style.opacity = Math.min((Math.abs(currentDeltaX) - 15) / 75, 1);
+      stampLike.style.opacity = '0';
+    } else {
+      stampLike.style.opacity = '0';
+      stampPass.style.opacity = '0';
+    }
   }
 }
 
-function onDragEnd() {
-  if (!isDraggingCard) return;
+function onDragEnd(e) {
+  if (!isDraggingCard || !activeDraggedCard) return;
   isDraggingCard = false;
+  const card = activeDraggedCard;
+  activeDraggedCard = null;
 
-  window.removeEventListener('mousemove', onDragMove);
-  window.removeEventListener('mouseup', onDragEnd);
+  if (e && e.pointerId !== undefined && card.releasePointerCapture) {
+    try {
+      card.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+  }
 
-  const topCard = document.querySelector('.swipe-card:nth-child(1)');
-  if (!topCard) return;
+  card.classList.remove('dragging');
+  card.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.22s ease';
 
-  topCard.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease';
+  const swipeThreshold = 75;
 
-  if (currentDeltaX > 100) {
-    // Swiped Right -> Like / Action
-    completeCardSwipe('right');
-  } else if (currentDeltaX < -100) {
-    // Swiped Left -> Pass
-    completeCardSwipe('left');
+  if (currentDeltaX > swipeThreshold) {
+    completeCardSwipe('right', card);
+  } else if (currentDeltaX < -swipeThreshold) {
+    completeCardSwipe('left', card);
   } else {
-    // Reset position
-    topCard.style.transform = 'translate(0px, 0px) rotate(0deg)';
-    const stampLike = document.getElementById('stamp-like');
-    const stampPass = document.getElementById('stamp-pass');
-    if (stampLike) stampLike.style.opacity = 0;
-    if (stampPass) stampPass.style.opacity = 0;
+    // Snap card back to center
+    card.style.transform = 'translate(0px, 0px) scale(1)';
+    const stampLike = card.querySelector('.swipe-stamp-like');
+    const stampPass = card.querySelector('.swipe-stamp-pass');
+    if (stampLike) stampLike.style.opacity = '0';
+    if (stampPass) stampPass.style.opacity = '0';
   }
 
   currentDeltaX = 0;
   currentDeltaY = 0;
 }
 
-function triggerCardSwipe(direction) {
-  completeCardSwipe(direction);
+// Fallback window listeners for mouse release outside card boundaries
+window.addEventListener('mousemove', (e) => {
+  if (isDraggingCard && activeDraggedCard && !window.PointerEvent) {
+    onDragMove(e);
+  }
+});
+window.addEventListener('mouseup', (e) => {
+  if (isDraggingCard && activeDraggedCard && !window.PointerEvent) {
+    onDragEnd(e);
+  }
+});
+
+function getActiveTopCard() {
+  const containers = [
+    document.getElementById('swipe-card-stack'),
+    document.getElementById('seeker-swipe-card-stack'),
+    document.getElementById('employer-swipe-card-stack')
+  ].filter(Boolean);
+
+  // Look for container inside active/visible view
+  const visibleContainer = containers.find(c => {
+    const view = c.closest('.dashboard-view, #tinder-swipe-view, .mobile-only-swipe-deck');
+    if (view && window.getComputedStyle(view).display === 'none') {
+      return false;
+    }
+    return c.offsetParent !== null;
+  });
+
+  if (visibleContainer) {
+    const card = visibleContainer.querySelector('.swipe-card:first-child');
+    if (card) return card;
+  }
+
+  // Fallback: any first-child card currently visible on screen
+  const allCards = Array.from(document.querySelectorAll('.swipe-card:first-child'));
+  return allCards.find(c => c.offsetParent !== null) || allCards[0] || null;
+}
+
+function triggerCardSwipe(direction, btnElement) {
+  let targetCard = null;
+  if (btnElement) {
+    const deckContainer = btnElement.closest('.mobile-only-swipe-deck, #tinder-swipe-view, .swipe-deck-container');
+    if (deckContainer) {
+      targetCard = deckContainer.querySelector('.swipe-card:first-child');
+    }
+  }
+  if (!targetCard) {
+    targetCard = getActiveTopCard();
+  }
+  if (targetCard) {
+    completeCardSwipe(direction, targetCard);
+  }
 }
 
 function reloadSwipeDeck() {
@@ -2853,43 +3016,45 @@ function reloadSwipeDeck() {
   renderTinderSwipeDeck();
 }
 
-function completeCardSwipe(direction) {
-  const topCard = document.querySelector('.swipe-card:nth-child(1)');
+function completeCardSwipe(direction, targetCard) {
+  const topCard = targetCard || getActiveTopCard();
   if (!topCard) return;
 
   const currentItem = marketplaceItemsData[tinderCurrentIndex];
 
-  if (direction === 'right') {
-    topCard.style.transform = 'translate(500px, 50px) rotate(35deg)';
-    topCard.style.opacity = 0;
+  topCard.style.transition = 'transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.24s ease';
 
-    // Trigger action after brief animation
-    setTimeout(() => {
-      if (currentItem) {
+  const stampLike = topCard.querySelector('.swipe-stamp-like');
+  const stampPass = topCard.querySelector('.swipe-stamp-pass');
+
+  if (direction === 'right') {
+    if (stampLike) stampLike.style.opacity = '1';
+    if (stampPass) stampPass.style.opacity = '0';
+    topCard.style.transform = 'translate(550px, 40px) rotate(35deg)';
+    topCard.style.opacity = '0';
+  } else {
+    if (stampPass) stampPass.style.opacity = '1';
+    if (stampLike) stampLike.style.opacity = '0';
+    topCard.style.transform = 'translate(-550px, 40px) rotate(-35deg)';
+    topCard.style.opacity = '0';
+  }
+
+  setTimeout(() => {
+    if (direction === 'right' && currentItem) {
+      if (currentMarketType === 'jobs') {
+        openApplyModal(currentItem.id, currentItem.title, currentItem.budget);
+      } else {
+        quickOrderGig(currentItem.id);
         const subtext = document.getElementById('match-modal-subtext');
         if (subtext) {
-          subtext.textContent = `You swiped right on "${currentItem.title}"!`;
+          subtext.textContent = `You swiped right to order "${currentItem.title}"!`;
         }
         openModal('match-modal');
-
-        if (currentMarketType === 'jobs') {
-          openApplyModal(currentItem.id, currentItem.title, currentItem.budget);
-        } else {
-          quickOrderGig(currentItem.id);
-        }
       }
-      tinderCurrentIndex++;
-      renderTinderSwipeDeck();
-    }, 250);
-  } else {
-    topCard.style.transform = 'translate(-500px, 50px) rotate(-35deg)';
-    topCard.style.opacity = 0;
-
-    setTimeout(() => {
-      tinderCurrentIndex++;
-      renderTinderSwipeDeck();
-    }, 250);
-  }
+    }
+    tinderCurrentIndex++;
+    renderTinderSwipeDeck();
+  }, 260);
 }
 
 function viewCurrentSwipeCardDetails() {
@@ -2931,15 +3096,6 @@ function viewCurrentSwipeCardDetails() {
   }
 
   openModal('swipe-detail-modal');
-}
-
-function openApplyModal(jobId, jobTitle, budget) {
-  document.getElementById('modal-job-id').value = jobId;
-  document.getElementById('modal-job-title').textContent = `Apply for: ${jobTitle}`;
-  document.getElementById('modal-job-budget').textContent = `BND ${parseFloat(budget).toFixed(2)}`;
-  document.getElementById('apply-bid').value = budget;
-  document.getElementById('apply-proposal').value = '';
-  openModal('apply-job-modal');
 }
 
 function quickOrderGig(gigId) {

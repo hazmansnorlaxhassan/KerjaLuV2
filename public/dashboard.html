@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - KerjaLu</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=3.6">
+  <script src="/theme.js?v=3.0"></script>
   <!-- Leaflet Map CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -24,8 +25,40 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="sidebar-top-group">
-        <div class="sidebar-header-row" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="sidebar-header-row" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
           <a href="/" class="logo" style="display: inline-flex;">KerjaLu <span>GIGS</span></a>
+          
+          <!-- Mobile Header Actions (Notification Bell & Theme Toggle on Right Side) -->
+          <div class="mobile-header-actions" style="display: flex; align-items: center; gap: 10px; margin-left: auto;">
+            <!-- Mobile Notification Bell Widget -->
+            <div class="notif-widget-container" style="position: relative;">
+              <button class="notif-bell-btn" onclick="toggleNotifDropdown(this)" aria-label="Notifications" title="Notifications">
+                <svg class="notif-bell-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-badge-count" style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 0.72rem; padding: 2px 5px; font-weight: 700; line-height: 1;">0</span>
+              </button>
+
+              <!-- Mobile Notification Dropdown Panel -->
+              <div class="notif-dropdown-panel glass-panel" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 310px; max-height: 400px; z-index: 2000; box-shadow: var(--shadow); overflow: hidden; padding: 0;">
+                <div style="padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                  <h4 style="margin: 0; font-size: 0.95rem;">Notifications</h4>
+                  <button onclick="markAllNotificationsRead()" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 0.75rem;">Mark All Read</button>
+                </div>
+                <div class="notif-list-container" style="max-height: 320px; overflow-y: auto;">
+                  <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No notifications yet.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mobile Theme Toggle -->
+            <button type="button" class="theme-toggle-btn mobile-header-theme-toggle" onclick="toggleTheme()" aria-label="Switch to Dark Mode" title="Switch to Dark Mode">
+              <span class="theme-toggle-icon-wrap" style="display:inline-flex;align-items:center;">
+                <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              </span>
+            </button>
+          </div>
         </div>
         
         <!-- Collapsible Content Wrapper (Bottom Nav Bar on Mobile) -->
@@ -35,17 +68,38 @@
             <!-- Populated by JavaScript -->
           </ul>
         </div>
-      </div>
 
-      <!-- User Card & Logout (Desktop Bottom / Mobile Top Header) -->
-      <div class="sidebar-user" id="sidebar-user-block">
-        <div class="user-info-sidebar">
-          <span class="username" id="sidebar-username">Loading...</span>
-          <span class="badge role-badge" id="sidebar-role">Loading...</span>
+        <!-- Desktop Navigation Bar Right-Side Actions -->
+        <div class="sidebar-desktop-actions" style="align-items: center; justify-content: flex-end; flex: 1 1 0%; gap: 12px;">
+          <!-- Desktop Notification Bell Widget -->
+          <div class="notif-widget-container" style="position: relative;">
+            <button class="notif-bell-btn" onclick="toggleNotifDropdown(this)" aria-label="Notifications" title="Notifications">
+              <svg class="notif-bell-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span class="notif-badge-count" style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 0.75rem; padding: 2px 6px; font-weight: 700; line-height: 1;">0</span>
+            </button>
+
+            <!-- Desktop Notification Dropdown Panel -->
+            <div class="notif-dropdown-panel glass-panel" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 340px; max-height: 400px; z-index: 2000; box-shadow: var(--shadow); overflow: hidden; padding: 0;">
+              <div style="padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0; font-size: 0.95rem;">Notifications</h4>
+                <button onclick="markAllNotificationsRead()" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 0.75rem;">Mark All Read</button>
+              </div>
+              <div class="notif-list-container" style="max-height: 320px; overflow-y: auto;">
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No notifications yet.</div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="theme-toggle-btn desktop-header-theme-toggle" onclick="toggleTheme()" aria-label="Switch to Dark Mode" title="Switch to Dark Mode">
+            <span class="theme-toggle-icon-wrap" style="display:inline-flex;align-items:center;">
+              <svg class="theme-icon theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </span>
+            <span class="theme-toggle-label">Dark</span>
+          </button>
         </div>
-        <button id="logout-sidebar-btn" class="btn btn-secondary btn-small">
-          Logout
-        </button>
       </div>
     </aside>
 
@@ -53,36 +107,10 @@
     <main class="main-content">
       
       <!-- Top Header & Welcome Banner -->
-      <div class="welcome-banner" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap;">
+      <div class="welcome-banner">
         <div>
           <h1 id="welcome-title" style="margin: 0;">Welcome Back!</h1>
           <p id="welcome-subtitle" style="margin: 5px 0 0 0;">Here is what is happening with your KerjaLu account today.</p>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 15px; position: relative;">
-          <!-- Wallet Balance Badge Widget -->
-          <div id="wallet-header-widget" onclick="openWalletModal()" style="cursor: pointer; background: var(--bg-card); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow-sm); transition: var(--transition);">
-            <span style="color: var(--color-primary);">Wallet:</span>
-            <span id="header-wallet-balance">BND 0.00</span>
-          </div>
-
-          <!-- Notification Bell Icon Widget -->
-          <div style="position: relative;">
-            <button id="notif-bell-btn" onclick="toggleNotifDropdown()" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 50%; width: 42px; height: 42px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; position: relative; box-shadow: var(--shadow-sm); transition: var(--transition);">
-              <span id="notif-badge-count" style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; border-radius: 50%; font-size: 0.75rem; padding: 2px 6px; font-weight: 700;">0</span>
-            </button>
-
-            <!-- Notification Dropdown Panel -->
-            <div id="notif-dropdown-panel" class="glass-panel" style="display: none; position: absolute; right: 0; top: 50px; width: 340px; max-height: 400px; z-index: 1000; box-shadow: var(--shadow); overflow: hidden; padding: 0;">
-              <div style="padding: 12px 16px; background: var(--bg-primary); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-                <h4 style="margin: 0; font-size: 0.95rem;">Notifications</h4>
-                <button onclick="markAllNotificationsRead()" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 0.75rem;">Mark All Read</button>
-              </div>
-              <div id="notif-list-container" style="max-height: 320px; overflow-y: auto;">
-                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No notifications yet.</div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -107,7 +135,7 @@
               <!-- JS rendered -->
             </div>
             <div class="swipe-controls">
-              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" aria-label="Pass" onclick="triggerCardSwipe('left')">
+              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" aria-label="Pass" onclick="triggerCardSwipe('left', this)">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -120,7 +148,7 @@
                   <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
-              <button type="button" class="swipe-btn swipe-btn-like" title="Apply Bid" aria-label="Apply Bid" onclick="triggerCardSwipe('right')">
+              <button type="button" class="swipe-btn swipe-btn-like" title="Apply Bid" aria-label="Apply Bid" onclick="triggerCardSwipe('right', this)">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
@@ -236,7 +264,7 @@
               <!-- JS rendered -->
             </div>
             <div class="swipe-controls">
-              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" aria-label="Pass" onclick="triggerCardSwipe('left')">
+              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip" aria-label="Pass" onclick="triggerCardSwipe('left', this)">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -249,7 +277,7 @@
                   <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
-              <button type="button" class="swipe-btn swipe-btn-like" title="Order Gig" aria-label="Order Gig" onclick="triggerCardSwipe('right')">
+              <button type="button" class="swipe-btn swipe-btn-like" title="Order Gig" aria-label="Order Gig" onclick="triggerCardSwipe('right', this)">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
@@ -484,7 +512,7 @@
 
             <!-- Action Controls Bar -->
             <div class="swipe-controls">
-              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip (Swipe Left)" aria-label="Pass" onclick="triggerCardSwipe('left')">
+              <button type="button" class="swipe-btn swipe-btn-pass" title="Pass / Skip (Swipe Left)" aria-label="Pass" onclick="triggerCardSwipe('left', this)">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -497,7 +525,7 @@
                   <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
               </button>
-              <button type="button" class="swipe-btn swipe-btn-like" title="Apply / Order (Swipe Right)" aria-label="Apply or Order" onclick="triggerCardSwipe('right')">
+              <button type="button" class="swipe-btn swipe-btn-like" title="Apply / Order (Swipe Right)" aria-label="Apply or Order" onclick="triggerCardSwipe('right', this)">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
@@ -897,6 +925,10 @@
               Direct messages route to WhatsApp for real-time communication. All conversation records and logs are tracked below.
             </p>
           </div>
+          <button type="button" class="btn btn-primary btn-small" onclick="openWhatsAppModal()" style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.073-2.123-.521-1.615-.672-2.658-2.316-2.738-2.424-.078-.107-.655-.873-.655-1.666 0-.793.414-1.184.561-1.345.148-.161.323-.201.431-.201.108 0 .216.002.31.007.1.006.233-.038.365.279.135.323.461 1.127.502 1.209.041.082.069.178.014.287-.054.108-.082.176-.162.272-.082.095-.172.213-.246.286-.081.081-.166.17-.071.333.095.163.422.697.906 1.128.623.555 1.149.728 1.312.809.163.081.258.072.353-.037.095-.108.406-.472.514-.634.108-.162.216-.135.365-.081.148.054.945.446 1.107.527.162.081.27.121.31.189.039.068.039.39-.105.795z"/></svg>
+            + New WhatsApp Message
+          </button>
         </div>
 
         <!-- Metric Summary Cards -->
@@ -962,7 +994,7 @@
         </div>
 
         <!-- Communication Records Table Container -->
-        <div class="glass-panel" style="padding: 0; overflow: hidden; border-radius: var(--radius-md);">
+        <div class="glass-panel table-wrapper comm-records-table-wrapper" style="padding: 0; overflow: hidden; border-radius: var(--radius-md);">
           <div style="overflow-x: auto;">
             <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; margin: 0;">
               <thead>
@@ -1023,13 +1055,16 @@
         </div>
         <div class="form-group">
           <label for="apply-bid">My Bid Amount (BND)</label>
-          <input type="number" id="apply-bid" class="form-control" placeholder="e.g. 150" required>
+          <input type="number" id="apply-bid" class="form-control" placeholder="e.g. 150.00" step="any" min="0.01" required>
         </div>
         <div class="form-group">
           <label for="apply-proposal">My Proposal Pitch</label>
-          <textarea id="apply-proposal" class="form-control" placeholder="Explain your experience and why you are the best fit..." required></textarea>
+          <textarea id="apply-proposal" class="form-control" placeholder="Explain your experience and why you are the best fit..." required rows="4"></textarea>
         </div>
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Submit Proposal</button>
+        <div style="display: flex; gap: 10px; margin-top: 16px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('apply-job-modal')" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1.5;">Submit Proposal</button>
+        </div>
       </form>
     </div>
   </div>
@@ -1266,6 +1301,6 @@
   </div>
 
   <!-- Include App Script -->
-  <script src="/app.js"></script>
+  <script src="/app.js?v=3.5"></script>
 </body>
 </html>

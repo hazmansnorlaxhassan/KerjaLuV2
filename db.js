@@ -181,13 +181,30 @@ initializeDatabase();
 module.exports = {
   query: async (sql, params) => {
     if (!pool) {
-      // If pool is not ready, establish connection synchronously/on-demand
       pool = mysql.createPool({
         ...dbConfig,
-        database: process.env.DB_NAME || 'kerjalu_db'
+        database: process.env.DB_NAME || 'kerjalu_db',
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
       });
     }
-    return pool.query(sql, params);
+    try {
+      return await pool.query(sql, params);
+    } catch (err) {
+      if (err.code === 'ECONNRESET' || err.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.warn('MySQL connection dropped, recreating pool and retrying query...');
+        pool = mysql.createPool({
+          ...dbConfig,
+          database: process.env.DB_NAME || 'kerjalu_db',
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0
+        });
+        return await pool.query(sql, params);
+      }
+      throw err;
+    }
   },
   pool: () => pool
 };
